@@ -423,6 +423,23 @@
   .weekly-modal .wm-text { font-size: 13px; color: var(--text-light); line-height: 1.7; margin-bottom: 18px; }
   .weekly-modal .wm-btn { width: 100%; }
 
+  /* 账单日：新增弹窗表单 */
+  .bill-modal { background: var(--card); border-radius:16px; padding:22px 20px; max-width:320px; width:100%; box-shadow:0 10px 40px rgba(0,0,0,0.25); }
+  .bill-modal .bm-title { font-size:17px; font-weight:700; color:var(--primary-dark); margin-bottom:14px; text-align:center; }
+  .bill-modal .bm-field { margin-bottom:12px; text-align:left; }
+  .bill-modal .bm-field label { display:block; font-size:12px; color:var(--text-light); margin-bottom:4px; }
+  .bill-modal .bm-field input { width:100%; box-sizing:border-box; padding:9px 10px; font-size:14px; border:1px solid var(--border); border-radius:8px; background:#FFF; }
+  .bill-modal .bm-field input:focus { border-color:#2E9E6B; outline:none; }
+  .bill-modal .bm-actions { display:flex; gap:10px; margin-top:8px; }
+  .bill-modal .bm-actions .btn { flex:1; }
+
+  /* 账单日：表头列名 + 左右移动 */
+  .bill-col-head { display:flex; flex-direction:column; align-items:center; gap:3px; }
+  .bill-col-move { display:flex; gap:3px; }
+  .bill-move-btn { width:22px; height:18px; line-height:1; font-size:10px; padding:0; border:1px solid var(--border); background:#F4F4F6; border-radius:4px; cursor:pointer; color:var(--text-light); }
+  .bill-move-btn:disabled { opacity:0.3; cursor:default; }
+  .bill-move-btn:not(:disabled):hover { background:#E6E6EA; color:var(--primary); }
+
   .pill {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: 10px; font-weight: 600;
@@ -685,32 +702,11 @@
 
   <!-- ========== 账单日 ========== -->
   <div class="page" id="page-bill">
-    <div class="card">
-      <div class="card-title"><span class="icon">💳</span>添加账单</div>
-      <div class="form-row">
-        <div class="weight-form-line">
-          <div class="weight-form-col" style="flex:2;">
-            <label>账单名称</label>
-            <input type="text" id="billName" placeholder="如 招行信用卡">
-          </div>
-          <div class="weight-form-col" style="flex:1;">
-            <label>账单日</label>
-            <input type="number" id="billDay" min="1" max="31" step="1" placeholder="如 10">
-          </div>
-          <div class="weight-form-col" style="flex:1;">
-            <label>金额（元）</label>
-            <input type="number" id="billAmount" min="0" step="0.01" placeholder="如 2000">
-          </div>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="saveBill()" style="width:100%;">保存账单</button>
-    </div>
-
-    <!-- 区域一：按月份打勾 -->
+    <!-- 区域一：账单日详情 -->
     <div class="card">
       <div class="card-title">
-        <span class="icon">📅</span>账单日 · 按月份
-        <button class="btn btn-outline" style="margin-left:auto;padding:4px 10px;font-size:12px;" onclick="addBillMonthCol()">+ 增加月份列</button>
+        <span class="icon">📅</span>账单日详情
+        <button class="btn btn-outline" style="margin-left:auto;padding:4px 10px;font-size:12px;" onclick="openBillMonthModal()">+ 新增账单日</button>
       </div>
       <div class="table-scroll">
         <table id="billMonthTable" class="bill-table">
@@ -719,14 +715,14 @@
         </table>
       </div>
       <div id="billEmpty" class="empty-tip">暂无账单</div>
-      <div style="font-size:11px;color:var(--text-light);margin-top:8px;line-height:1.5;">💡 月份列头可直接修改（如改成 11月）；每格直接填该月金额。</div>
+      <div style="font-size:11px;color:var(--text-light);margin-top:8px;line-height:1.5;">💡 月份列头可直接修改（如改成 6月）；点列头下方 ◀▶ 可左右移动列。每格直接填该月金额。</div>
     </div>
 
-    <!-- 区域二：按年份打勾 -->
+    <!-- 区域二：年费 -->
     <div class="card">
       <div class="card-title">
-        <span class="icon">🗓️</span>账单日 · 按年份
-        <button class="btn btn-outline" style="margin-left:auto;padding:4px 10px;font-size:12px;" onclick="addBillYearCol()">+ 增加年份列</button>
+        <span class="icon">🗓️</span>年费
+        <button class="btn btn-outline" style="margin-left:auto;padding:4px 10px;font-size:12px;" onclick="openBillYearModal()">+ 新增年费</button>
       </div>
       <div class="table-scroll">
         <table id="billYearTable" class="bill-table">
@@ -734,8 +730,8 @@
           <tbody id="billYearBody"></tbody>
         </table>
       </div>
-      <div id="billYearEmpty" class="empty-tip">暂无账单</div>
-      <div style="font-size:11px;color:var(--text-light);margin-top:8px;line-height:1.5;">💡 年份列头可直接修改（如改成 2028年）；每格下拉选 ✅ / ❌。</div>
+      <div id="billYearEmpty" class="empty-tip">暂无年费</div>
+      <div style="font-size:11px;color:var(--text-light);margin-top:8px;line-height:1.5;">💡 年份列头可直接修改（如改成 2028年）；点列头下方 ◀▶ 可左右移动/互换列。每格下拉选 ✅ / ❌（默认 ❌）。</div>
     </div>
   </div>
 
@@ -768,13 +764,42 @@
   </div>
 </div>
 
+<!-- 新增账单日弹窗 -->
+<div class="weekly-modal-mask" id="billMonthModal" style="display:none;" onclick="if(event.target===this)closeBillMonthModal()">
+  <div class="bill-modal">
+    <div class="bm-title">新增账单日</div>
+    <div class="bm-field"><label>银行名</label><input type="text" id="bmBank" placeholder="如 招行信用卡"></div>
+    <div class="bm-field"><label>账单日（每月几号）</label><input type="number" id="bmDay" min="1" max="31" step="1" placeholder="如 10"></div>
+    <div class="bm-field"><label>还款日（每月几号）</label><input type="number" id="bmRepay" min="1" max="31" step="1" placeholder="如 28"></div>
+    <div class="bm-actions">
+      <button class="btn btn-primary" onclick="saveBillMonthDetail()">保存</button>
+      <button class="btn btn-outline" onclick="closeBillMonthModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- 新增年费弹窗 -->
+<div class="weekly-modal-mask" id="billYearModal" style="display:none;" onclick="if(event.target===this)closeBillYearModal()">
+  <div class="bill-modal">
+    <div class="bm-title">新增年费</div>
+    <div class="bm-field"><label>卡号</label><input type="text" id="byCard" placeholder="如 4392 **** **** 1234"></div>
+    <div class="bm-field"><label>年费要求</label><input type="text" id="byReq" placeholder="如 刷满6次免年费"></div>
+    <div class="bm-field"><label>年费时间</label><input type="text" id="byTime" placeholder="如 2027-03"></div>
+    <div class="bm-actions">
+      <button class="btn btn-primary" onclick="saveBillYearFee()">保存</button>
+      <button class="btn btn-outline" onclick="closeBillYearModal()">取消</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ====== 数据持久化 ======
 const KEY_PERIOD = 'dr_period_v1';
 const KEY_WEIGHT = 'dr_weight_v1';
 const KEY_ANNIV  = 'dr_anniv_v1';
 const KEY_CYCLE  = 'dr_cycle_v1';
-const KEY_BILL   = 'dr_bill_v1';
+const KEY_BILL_MONTH = 'dr_bill_month_v1';
+const KEY_BILL_YEAR  = 'dr_bill_year_v1';
 
 let periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
 let weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
@@ -782,32 +807,45 @@ let annivs  = JSON.parse(localStorage.getItem(KEY_ANNIV)  || '[]');
 let dietHistory = JSON.parse(localStorage.getItem('dr_diet_v1') || '[]');
 let weightTarget = 64; // 固定目标体重 64kg
 
-// ====== 账单日数据 ======
-// billData = { bills:[{id,name,day,amount}], monthCols:['10月','11月'], yearCols:['2027年'],
-//              monthVals:{ 'billId|10月': 数字金额 }, yearMarks:{ 'billId|2027年': 'ok'|'no' } }
-let billData = (function () {
-  const curMonth = (new Date().getMonth() + 1) + '月';
-  const defaultMonthCols = [curMonth, (((new Date().getMonth() + 1) % 12) + 1) + '月'];
-  const defaultYearCols = [new Date().getFullYear() + '年'];
+// ====== 账单日数据（两块互不关联）======
+// 账单日详情（按月）：{ rows:[{id,bank,billDay,repayDay}], monthCols:['10月','11月','12月'], monthVals:{'id|10月':金额} }
+// 年费（按年）：{ rows:[{id,cardNo,feeReq,feeTime}], yearCols:['2026年','2027年'], yearMarks:{'id|2026年':'ok'|'no'} }
+function loadBillMonth() {
+  const def = { rows: [], monthCols: ['10月', '11月', '12月'], monthVals: {} };
   try {
-    const raw = JSON.parse(localStorage.getItem(KEY_BILL) || 'null');
-    if (raw && Array.isArray(raw.bills)) {
+    const raw = JSON.parse(localStorage.getItem(KEY_BILL_MONTH) || 'null');
+    if (raw && Array.isArray(raw.rows)) {
       return {
-        bills: raw.bills,
-        monthCols: Array.isArray(raw.monthCols) && raw.monthCols.length ? raw.monthCols : defaultMonthCols,
-        yearCols: Array.isArray(raw.yearCols) && raw.yearCols.length ? raw.yearCols : defaultYearCols,
-        monthVals: raw.monthVals || {},
+        rows: raw.rows,
+        monthCols: Array.isArray(raw.monthCols) && raw.monthCols.length ? raw.monthCols : def.monthCols,
+        monthVals: raw.monthVals || {}
+      };
+    }
+  } catch (e) {}
+  return def;
+}
+function loadBillYear() {
+  const def = { rows: [], yearCols: ['2026年', '2027年'], yearMarks: {} };
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY_BILL_YEAR) || 'null');
+    if (raw && Array.isArray(raw.rows)) {
+      return {
+        rows: raw.rows,
+        yearCols: Array.isArray(raw.yearCols) && raw.yearCols.length ? raw.yearCols : def.yearCols,
         yearMarks: raw.yearMarks || {}
       };
     }
   } catch (e) {}
-  return { bills: [], monthCols: defaultMonthCols, yearCols: defaultYearCols, monthVals: {}, yearMarks: {} };
-})();
+  return def;
+}
+let billMonth = loadBillMonth();
+let billYear  = loadBillYear();
+function saveBillMonth() { localStorage.setItem(KEY_BILL_MONTH, JSON.stringify(billMonth)); }
+function saveBillYear()  { localStorage.setItem(KEY_BILL_YEAR,  JSON.stringify(billYear)); }
 
 function savePeriods() { localStorage.setItem(KEY_PERIOD, JSON.stringify(periods)); }
 function saveWeights() { localStorage.setItem(KEY_WEIGHT, JSON.stringify(weights)); }
 function saveAnnivs()  { localStorage.setItem(KEY_ANNIV,  JSON.stringify(annivs)); }
-function saveBills()   { localStorage.setItem(KEY_BILL,   JSON.stringify(billData)); }
 
 // ====== 打卡周期（31 天）======
 // 起点为第 1 天，起点 + 31 天为第 32 天（结束），共 32 个日期
@@ -1911,20 +1949,20 @@ function renderBirthdayBoard() {
 
 
 // ====== 账单日模块 ======
-// 下拉：空 / ✅ 已缴 / ❌ 未缴
+// 年费下拉：✅ 已缴 / ❌ 未缴（默认 ❌）
 const BILL_MARK_OPTIONS = [
-  { v: '',    t: '—'  },
-  { v: 'ok',  t: '✅' },
-  { v: 'no',  t: '❌' }
+  { v: 'no',  t: '❌' },
+  { v: 'ok',  t: '✅' }
 ];
-function billMarkSelect(billId, col, val, kind) {
-  const fn = kind === 'year' ? 'setBillYearMark' : 'setBillMonthMark';
+// 年费（按年份）：每格为 ✅/❌ 下拉，默认 ❌
+function billMarkSelect(billId, col, val) {
+  const v = (val === 'ok') ? 'ok' : 'no';
   const opts = BILL_MARK_OPTIONS.map(o =>
-    `<option value="${o.v}"${o.v === (val || '') ? ' selected' : ''}>${o.t}</option>`).join('');
-  return `<select class="bill-mark-select" data-v="${val || ''}"
-    onchange="${fn}(${billId},'${String(col).replace(/'/g, "\\'")}',this.value,this)">${opts}</select>`;
+    `<option value="${o.v}"${o.v === v ? ' selected' : ''}>${o.t}</option>`).join('');
+  return `<select class="bill-mark-select" data-v="${v}"
+    onchange="setBillYearMark(${billId},'${String(col).replace(/'/g, "\\'")}',this.value,this)">${opts}</select>`;
 }
-// 区域一（按月份）：每格为可手输的金额数字
+// 账单日详情（按月份）：每格为可手输的金额数字
 function billAmountInput(billId, col, val) {
   const v = (val === undefined || val === null || val === '') ? '' : val;
   return `<input type="number" class="bill-amt-input" min="0" step="0.01" placeholder="0" value="${v}"
@@ -1932,90 +1970,120 @@ function billAmountInput(billId, col, val) {
 }
 function setBillMonthVal(id, col, val) {
   const key = id + '|' + col;
-  if (val === '' || val === null) delete billData.monthVals[key];
-  else billData.monthVals[key] = parseFloat(val);
-  saveBills();
+  if (val === '' || val === null) delete billMonth.monthVals[key];
+  else billMonth.monthVals[key] = parseFloat(val);
+  saveBillMonth();
 }
-// 表头：可直接手输的月份 / 年份列名
-function billColInput(cols, idx, kind) {
-  const fn = kind === 'year' ? 'setBillYearCol' : 'setBillMonthCol';
-  return `<input class="bill-col-input" value="${String(cols[idx]).replace(/"/g, '&quot;')}"
-    onchange="${fn}(${idx},this.value)" oninput="${fn}(${idx},this.value)" title="可直接修改">`;
+// 表头：可手输列名 + ◀▶ 左右移动列
+function billColHead(cols, idx, kind) {
+  const renameFn = kind === 'year' ? 'setBillYearCol' : 'setBillMonthCol';
+  const moveFn   = kind === 'year' ? 'moveYearCol' : 'moveMonthCol';
+  const canLeft  = idx > 0;
+  const canRight = idx < cols.length - 1;
+  return `<div class="bill-col-head">
+    <input class="bill-col-input" value="${String(cols[idx]).replace(/"/g, '&quot;')}"
+      onchange="${renameFn}(${idx},this.value)" oninput="${renameFn}(${idx},this.value)" title="可直接修改列名">
+    <div class="bill-col-move">
+      <button class="bill-move-btn" ${canLeft ? '' : 'disabled'} onclick="${moveFn}(${idx},-1)">◀</button>
+      <button class="bill-move-btn" ${canRight ? '' : 'disabled'} onclick="${moveFn}(${idx},1)">▶</button>
+    </div>
+  </div>`;
 }
 
-function saveBill() {
-  const name = document.getElementById('billName').value.trim();
-  const day  = parseInt(document.getElementById('billDay').value, 10);
-  const amount = parseFloat(document.getElementById('billAmount').value);
-  if (!name) { alert('请填写账单名称'); return; }
+// ====== 账单日详情（按月）======
+function openBillMonthModal() {
+  document.getElementById('bmBank').value = '';
+  document.getElementById('bmDay').value = '';
+  document.getElementById('bmRepay').value = '';
+  document.getElementById('billMonthModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('bmBank').focus(), 50);
+}
+function closeBillMonthModal() { document.getElementById('billMonthModal').style.display = 'none'; }
+function saveBillMonthDetail() {
+  const bank = document.getElementById('bmBank').value.trim();
+  const day = parseInt(document.getElementById('bmDay').value, 10);
+  const repay = parseInt(document.getElementById('bmRepay').value, 10);
+  if (!bank) { alert('请填写银行名'); return; }
   if (!(day >= 1 && day <= 31)) { alert('请填写账单日（1-31）'); return; }
-  billData.bills.push({
-    id: Date.now(),
-    name,
-    day,
-    amount: isNaN(amount) ? 0 : amount
-  });
-  saveBills();
-  document.getElementById('billName').value = '';
-  document.getElementById('billDay').value = '';
-  document.getElementById('billAmount').value = '';
-  renderBill();
+  if (!(repay >= 1 && repay <= 31)) { alert('请填写还款日（1-31）'); return; }
+  billMonth.rows.push({ id: Date.now(), bank, billDay: day, repayDay: repay });
+  saveBillMonth(); closeBillMonthModal(); renderBill();
 }
-function deleteBill(id) {
-  if (!confirm('确定删除这条账单？')) return;
-  billData.bills = billData.bills.filter(b => b.id !== id);
-  // 同步清理金额与打勾记录
-  Object.keys(billData.monthVals).forEach(k => { if (k.startsWith(id + '|')) delete billData.monthVals[k]; });
-  Object.keys(billData.yearMarks).forEach(k => { if (k.startsWith(id + '|')) delete billData.yearMarks[k]; });
-  saveBills(); renderBill();
-}
-function setBillMonthMark(id, col, val, el) {
-  const key = id + '|' + col;
-  if (val) billData.monthVals[key] = val; else delete billData.monthVals[key];
-  if (el) el.dataset.v = val;
-  saveBills();
-}
-function setBillYearMark(id, col, val, el) {
-  const key = id + '|' + col;
-  if (val) billData.yearMarks[key] = val; else delete billData.yearMarks[key];
-  if (el) el.dataset.v = val;
-  saveBills();
+function deleteBillMonth(id) {
+  if (!confirm('确定删除这条账单日详情？')) return;
+  billMonth.rows = billMonth.rows.filter(r => r.id !== id);
+  Object.keys(billMonth.monthVals).forEach(k => { if (k.startsWith(id + '|')) delete billMonth.monthVals[k]; });
+  saveBillMonth(); renderBill();
 }
 // 修改月份列名（保持已填金额随列迁移）
 function setBillMonthCol(idx, val) {
   const v = (val || '').trim(); if (!v) return;
-  const old = billData.monthCols[idx];
+  const old = billMonth.monthCols[idx];
   if (old === v) return;
-  billData.monthCols[idx] = v;
-  billData.bills.forEach(b => {
-    const k = b.id + '|' + old, nk = b.id + '|' + v;
-    if (billData.monthVals[k] !== undefined) { billData.monthVals[nk] = billData.monthVals[k]; delete billData.monthVals[k]; }
+  billMonth.monthCols[idx] = v;
+  billMonth.rows.forEach(r => {
+    const k = r.id + '|' + old, nk = r.id + '|' + v;
+    if (billMonth.monthVals[k] !== undefined) { billMonth.monthVals[nk] = billMonth.monthVals[k]; delete billMonth.monthVals[k]; }
   });
-  saveBills();
+  saveBillMonth();
 }
+// 左右移动月份列
+function moveMonthCol(idx, dir) {
+  const j = idx + dir;
+  if (j < 0 || j >= billMonth.monthCols.length) return;
+  const a = billMonth.monthCols;
+  const t = a[idx]; a[idx] = a[j]; a[j] = t;
+  saveBillMonth(); renderBill();
+}
+
+// ====== 年费（按年）======
+function openBillYearModal() {
+  document.getElementById('byCard').value = '';
+  document.getElementById('byReq').value = '';
+  document.getElementById('byTime').value = '';
+  document.getElementById('billYearModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('byCard').focus(), 50);
+}
+function closeBillYearModal() { document.getElementById('billYearModal').style.display = 'none'; }
+function saveBillYearFee() {
+  const card = document.getElementById('byCard').value.trim();
+  const req = document.getElementById('byReq').value.trim();
+  const time = document.getElementById('byTime').value.trim();
+  if (!card) { alert('请填写卡号'); return; }
+  billYear.rows.push({ id: Date.now(), cardNo: card, feeReq: req, feeTime: time });
+  saveBillYear(); closeBillYearModal(); renderBill();
+}
+function deleteBillYear(id) {
+  if (!confirm('确定删除这条年费？')) return;
+  billYear.rows = billYear.rows.filter(r => r.id !== id);
+  Object.keys(billYear.yearMarks).forEach(k => { if (k.startsWith(id + '|')) delete billYear.yearMarks[k]; });
+  saveBillYear(); renderBill();
+}
+function setBillYearMark(id, col, val, el) {
+  const key = id + '|' + col;
+  if (val) billYear.yearMarks[key] = val; else delete billYear.yearMarks[key];
+  if (el) el.dataset.v = val;
+  saveBillYear();
+}
+// 修改年份列名（保持打勾随列迁移）
 function setBillYearCol(idx, val) {
   const v = (val || '').trim(); if (!v) return;
-  const old = billData.yearCols[idx];
+  const old = billYear.yearCols[idx];
   if (old === v) return;
-  billData.yearCols[idx] = v;
-  billData.bills.forEach(b => {
-    const k = b.id + '|' + old, nk = b.id + '|' + v;
-    if (billData.yearMarks[k] !== undefined) { billData.yearMarks[nk] = billData.yearMarks[k]; delete billData.yearMarks[k]; }
+  billYear.yearCols[idx] = v;
+  billYear.rows.forEach(r => {
+    const k = r.id + '|' + old, nk = r.id + '|' + v;
+    if (billYear.yearMarks[k] !== undefined) { billYear.yearMarks[nk] = billYear.yearMarks[k]; delete billYear.yearMarks[k]; }
   });
-  saveBills();
+  saveBillYear();
 }
-function addBillMonthCol() {
-  const last = billData.monthCols[billData.monthCols.length - 1] || '10月';
-  const m = parseInt(String(last).replace(/\D/g, ''), 10);
-  const next = (isNaN(m) ? 10 : (m % 12) + 1) + '月';
-  billData.monthCols.push(next);
-  saveBills(); renderBill();
-}
-function addBillYearCol() {
-  const last = billData.yearCols[billData.yearCols.length - 1] || (new Date().getFullYear() + '年');
-  const y = parseInt(String(last).replace(/\D/g, ''), 10);
-  billData.yearCols.push((isNaN(y) ? new Date().getFullYear() : y + 1) + '年');
-  saveBills(); renderBill();
+// 左右移动 / 互换年份列
+function moveYearCol(idx, dir) {
+  const j = idx + dir;
+  if (j < 0 || j >= billYear.yearCols.length) return;
+  const a = billYear.yearCols;
+  const t = a[idx]; a[idx] = a[j]; a[j] = t;
+  saveBillYear(); renderBill();
 }
 
 function renderBill() {
@@ -2025,44 +2093,49 @@ function renderBill() {
   const body2 = document.getElementById('billYearBody');
   if (!head1 || !body1 || !head2 || !body2) return;
 
-  const bills = billData.bills;
   const empty1 = document.getElementById('billEmpty');
   const empty2 = document.getElementById('billYearEmpty');
 
-  // 表头：账单名称 / 账单日 / 金额 / 各月份列（可手输） / 操作
-  head1.innerHTML = `<th>账单名称</th><th>账单日</th><th>金额</th>` +
-    billData.monthCols.map((c, i) => `<th style="min-width:56px;">${billColInput(billData.monthCols, i, 'month')}</th>`).join('') +
+  // 区域一表头：银行名 / 账单日 / 还款日 / 各月份列（可改名 + ◀▶移动） / 操作
+  head1.innerHTML = `<th>银行名</th><th>账单日</th><th>还款日</th>` +
+    billMonth.monthCols.map((c, i) => `<th style="min-width:64px;">${billColHead(billMonth.monthCols, i, 'month')}</th>`).join('') +
     `<th></th>`;
-  head2.innerHTML = `<th>账单名称</th><th>账单日</th><th>金额</th>` +
-    billData.yearCols.map((c, i) => `<th style="min-width:56px;">${billColInput(billData.yearCols, i, 'year')}</th>`).join('') +
+  // 区域二表头：卡号 / 年费要求 / 年费时间 / 各年份列（可改名 + ◀▶移动/互换） / 操作
+  head2.innerHTML = `<th>卡号</th><th>年费要求</th><th>年费时间</th>` +
+    billYear.yearCols.map((c, i) => `<th style="min-width:64px;">${billColHead(billYear.yearCols, i, 'year')}</th>`).join('') +
     `<th></th>`;
 
-  if (bills.length === 0) {
-    body1.innerHTML = ''; body2.innerHTML = '';
+  // 区域一：账单日详情
+  if (billMonth.rows.length === 0) {
+    body1.innerHTML = '';
     if (empty1) empty1.style.display = 'block';
-    if (empty2) empty2.style.display = 'block';
-    return;
+  } else {
+    if (empty1) empty1.style.display = 'none';
+    const act = r => `<td><div class="row-actions"><button class="icon-btn" title="删除" onclick="deleteBillMonth(${r.id})">🗑️</button></div></td>`;
+    body1.innerHTML = billMonth.rows.map(r => `<tr>
+      <td class="bill-name-cell" title="${r.bank}">${r.bank}</td>
+      <td style="text-align:center;">${r.billDay}号</td>
+      <td style="text-align:center;">${r.repayDay}号</td>
+      ${billMonth.monthCols.map(c => `<td style="padding:2px 3px;">${billAmountInput(r.id, c, billMonth.monthVals[r.id + '|' + c])}</td>`).join('')}
+      ${act(r)}
+    </tr>`).join('');
   }
-  if (empty1) empty1.style.display = 'none';
-  if (empty2) empty2.style.display = 'none';
 
-  const act = b => `<td><div class="row-actions"><button class="icon-btn" title="删除" onclick="deleteBill(${b.id})">🗑️</button></div></td>`;
-
-  body1.innerHTML = bills.map(b => `<tr>
-    <td class="bill-name-cell" title="${b.name}">${b.name}</td>
-    <td style="text-align:center;">${b.day}号</td>
-    <td style="text-align:right;">${b.amount ? '¥' + Number(b.amount).toLocaleString('zh-CN') : '—'}</td>
-    ${billData.monthCols.map(c => `<td style="padding:2px 3px;">${billAmountInput(b.id, c, billData.monthVals[b.id + '|' + c])}</td>`).join('')}
-    ${act(b)}
-  </tr>`).join('');
-
-  body2.innerHTML = bills.map(b => `<tr>
-    <td class="bill-name-cell" title="${b.name}">${b.name}</td>
-    <td style="text-align:center;">${b.day}号</td>
-    <td style="text-align:right;">${b.amount ? '¥' + Number(b.amount).toLocaleString('zh-CN') : '—'}</td>
-    ${billData.yearCols.map(c => `<td style="padding:2px 3px;">${billMarkSelect(b.id, c, billData.yearMarks[b.id + '|' + c], 'year')}</td>`).join('')}
-    ${act(b)}
-  </tr>`).join('');
+  // 区域二：年费
+  if (billYear.rows.length === 0) {
+    body2.innerHTML = '';
+    if (empty2) empty2.style.display = 'block';
+  } else {
+    if (empty2) empty2.style.display = 'none';
+    const act = r => `<td><div class="row-actions"><button class="icon-btn" title="删除" onclick="deleteBillYear(${r.id})">🗑️</button></div></td>`;
+    body2.innerHTML = billYear.rows.map(r => `<tr>
+      <td class="bill-name-cell" title="${r.cardNo}">${r.cardNo}</td>
+      <td class="bill-name-cell" title="${r.feeReq || ''}">${r.feeReq ? r.feeReq : '—'}</td>
+      <td style="text-align:center;">${r.feeTime ? r.feeTime : '—'}</td>
+      ${billYear.yearCols.map(c => `<td style="padding:2px 3px;">${billMarkSelect(r.id, c, billYear.yearMarks[r.id + '|' + c])}</td>`).join('')}
+      ${act(r)}
+    </tr>`).join('');
+  }
 }
 
 // ====== 每周首次打开弹窗 ======
@@ -2080,7 +2153,7 @@ function closeWeeklyModal() {
 // 导出全部记录数据为 JSON 文件
 function exportAllData() {
   const data = {};
-  const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_v1'];
+  const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1'];
   keys.forEach(k => {
     try { data[k] = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { data[k] = []; }
   });
@@ -2104,7 +2177,7 @@ function importAllData(input) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_v1'];
+      const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1'];
       keys.forEach(k => {
         if (data[k] !== undefined) {
           const v = Array.isArray(data[k]) ? data[k] : data[k];
@@ -2115,17 +2188,8 @@ function importAllData(input) {
       periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
       weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
       annivs  = JSON.parse(localStorage.getItem(KEY_ANNIV)  || '[]');
-      try {
-        const b = JSON.parse(localStorage.getItem(KEY_BILL) || 'null');
-        if (b && Array.isArray(b.bills)) {
-          billData = {
-            bills: b.bills,
-            monthCols: Array.isArray(b.monthCols) && b.monthCols.length ? b.monthCols : billData.monthCols,
-            yearCols: Array.isArray(b.yearCols) && b.yearCols.length ? b.yearCols : billData.yearCols,
-            marks: b.marks || {}, yearMarks: b.yearMarks || {}
-          };
-        }
-      } catch (e) {}
+      billMonth = loadBillMonth();
+      billYear  = loadBillYear();
       alert('导入成功，已覆盖本地数据');
       renderAll();
     } catch (e) {
