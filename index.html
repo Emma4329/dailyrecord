@@ -392,6 +392,16 @@
   .conv-result { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg); font-size: 14px; color: var(--text-light); text-align: center; }
   .conv-result.active { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
   .conv-result-sub { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+  .conv-log-title { font-size: 12px; font-weight: 700; color: var(--primary-dark); margin: 14px 0 6px; }
+  .conv-log-title span { font-weight: 500; color: var(--text-light); }
+  .conv-log { max-height: 240px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 8px; }
+  .conv-log-empty { padding: 14px 10px; text-align: center; font-size: 12px; color: var(--text-light); }
+  .conv-log-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .conv-log-item:last-child { border-bottom: none; }
+  .conv-log-item .li-note { flex: 0 0 auto; max-width: 5.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--primary-dark); }
+  .conv-log-item .li-val { flex: 1; min-width: 0; line-height: 1.5; }
+  .conv-log-item .li-time { display: block; font-size: 10px; color: var(--text-light); font-weight: 400; margin-top: 2px; }
+  .conv-log-item .li-del { flex: 0 0 auto; border: none; background: transparent; color: var(--danger); font-size: 15px; cursor: pointer; padding: 2px 6px; }
 
   /* 内滑条容器：历史记录 / 饮食掉秤榜 */
   .hist-scroll, .diet-scroll {
@@ -607,25 +617,9 @@
       <div id="cycleBoardEmpty" class="empty-tip">暂无打卡周期</div>
     </div>
 
-    <!-- 换算工具：千焦⇄千卡、BMI -->
+    <!-- 换算工具：BMI、目标体重、千焦⇄千卡（含备注记录） -->
     <div class="card">
       <div class="card-title"><span class="icon">🧮</span>换算工具</div>
-
-      <div class="conv-sub">🔥 千焦 ⇄ 千卡（大卡）</div>
-      <div class="conv-row">
-        <div class="conv-field">
-          <label>千焦（kJ）</label>
-          <input type="number" id="convKj" step="any" placeholder="输入千焦" oninput="convFromKj()">
-        </div>
-        <div class="conv-swap">⇄</div>
-        <div class="conv-field">
-          <label>千卡 / 大卡（kcal）</label>
-          <input type="number" id="convKcal" step="any" placeholder="输入千卡" oninput="convFromKcal()">
-        </div>
-      </div>
-      <div class="conv-note">1 千卡（大卡）= 4.184 千焦；输入任意一侧，另一侧自动换算。</div>
-
-      <div class="conv-divider"></div>
 
       <div class="conv-sub">⚖️ BMI 换算</div>
       <div class="conv-row">
@@ -655,11 +649,35 @@
         </div>
         <div class="conv-field">
           <label>目标 BMI</label>
-          <input type="number" id="convGoalBmi" step="any" placeholder="如 22" oninput="calcGoalWeight()">
+          <input type="number" id="convGoalBmi" step="any" placeholder="如 23.9" oninput="calcGoalWeight()">
         </div>
       </div>
       <div class="conv-result" id="convGoalResult">请输入身高和目标 BMI</div>
-      <div class="conv-note">目标体重(kg) = 目标BMI × 身高(m)²；体重差 = 目标体重 − 最近记录体重（负数表示还需减重）。</div>
+      <div class="conv-note">目标体重(kg) = 目标BMI × 身高(m)²；体重差 = 目标体重 − 最近记录体重（负数表示还需减重）。输入的身高和目标 BMI 会自动记住，下次打开仍在。</div>
+
+      <div class="conv-divider"></div>
+
+      <div class="conv-sub">🔥 千焦 ⇄ 千卡（大卡）</div>
+      <div class="conv-row">
+        <div class="conv-field">
+          <label>千焦（kJ）</label>
+          <input type="number" id="convKj" step="any" placeholder="输入千焦" oninput="convFromKj()">
+        </div>
+        <div class="conv-swap">⇄</div>
+        <div class="conv-field">
+          <label>千卡 / 大卡（kcal）</label>
+          <input type="number" id="convKcal" step="any" placeholder="输入千卡" oninput="convFromKcal()">
+        </div>
+      </div>
+      <div class="conv-field" style="margin-top:10px;">
+        <label>备注</label>
+        <input type="text" id="convNote" placeholder="如：饺子" autocomplete="off">
+      </div>
+      <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="saveConvRecord()">记录这一笔</button>
+      <div class="conv-note">1 千卡（大卡）= 4.184 千焦；输入任意一侧，另一侧自动换算。填好备注后点「记录这一笔」，下方会存成一条「备注 千焦＝大卡」。</div>
+
+      <div class="conv-log-title">📝 换算记录 <span id="convLogCount"></span></div>
+      <div id="convLog" class="conv-log"></div>
     </div>
   </div>
 
@@ -1441,8 +1459,72 @@ function editWeight(ts) {
 }
 
 // 区间总变化（斤）：末-初，负=减重；1kg=2斤
-// ====== 换算工具：千焦⇄千卡、BMI ======
+// ====== 换算工具：BMI、目标体重、千焦⇄千卡（含备注记录） ======
 const KJ_PER_KCAL = 4.184;
+const CONV_GOAL_KEY = 'dr_goal_v1';      // 目标体重换算：{height, bmi}，自动记忆
+const CONV_LOG_KEY  = 'dr_conv_log_v1';  // 千焦⇄千卡备注记录
+
+function convEsc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function convNum(v) { return String(+Number(v).toFixed(2)); }
+function convTime(ts) {
+  const d = new Date(ts), p = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+function loadConvLog() {
+  try { const a = JSON.parse(localStorage.getItem(CONV_LOG_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+}
+function renderConvLog() {
+  const box = document.getElementById('convLog'); if (!box) return;
+  const list = loadConvLog();
+  const cnt = document.getElementById('convLogCount');
+  if (cnt) cnt.textContent = list.length ? '共 ' + list.length + ' 条' : '';
+  if (!list.length) { box.innerHTML = '<div class="conv-log-empty">暂无换算记录</div>'; return; }
+  box.innerHTML = list.map(it =>
+    '<div class="conv-log-item">'
+    + '<span class="li-note">' + convEsc(it.note || '未备注') + '</span>'
+    + '<span class="li-val">' + convNum(it.kj) + ' 千焦 ＝ ' + convNum(it.kcal) + ' 大卡'
+    + '<span class="li-time">' + convTime(it.ts || Date.now()) + '</span></span>'
+    + '<button class="li-del" title="删除" onclick="deleteConvRecord(\'' + convEsc(it.id) + '\')">✕</button>'
+    + '</div>').join('');
+}
+function saveConvRecord() {
+  const kjEl = document.getElementById('convKj'), kcalEl = document.getElementById('convKcal');
+  let kj = parseFloat(kjEl.value), kcal = parseFloat(kcalEl.value);
+  if (isNaN(kj) && isNaN(kcal)) { alert('请先填写千焦或千卡数值'); return; }
+  if (isNaN(kj)) kj = kcal * KJ_PER_KCAL;
+  kcal = kj / KJ_PER_KCAL; // 以千焦为准，保证两侧自洽
+  const noteEl = document.getElementById('convNote');
+  const note = (noteEl.value || '').trim();
+  const list = loadConvLog();
+  list.unshift({
+    id: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 7),
+    note: note || '未备注',
+    kj: +kj.toFixed(2), kcal: +kcal.toFixed(2), ts: Date.now()
+  });
+  localStorage.setItem(CONV_LOG_KEY, JSON.stringify(list));
+  noteEl.value = '';
+  renderConvLog();
+}
+function deleteConvRecord(id) {
+  const list = loadConvLog().filter(x => String(x.id) !== String(id));
+  localStorage.setItem(CONV_LOG_KEY, JSON.stringify(list));
+  renderConvLog();
+}
+function restoreConvTools() {
+  try {
+    const g = JSON.parse(localStorage.getItem(CONV_GOAL_KEY) || '{}');
+    if (g && typeof g === 'object' && !Array.isArray(g)) {
+      const h = document.getElementById('convGoalHeight'), b = document.getElementById('convGoalBmi');
+      if (h && g.height !== undefined && g.height !== null) h.value = g.height;
+      if (b && g.bmi !== undefined && g.bmi !== null) b.value = g.bmi;
+    }
+  } catch (e) {}
+  calcGoalWeight();
+  renderConvLog();
+}
 function convFromKj() {
   const v = parseFloat(document.getElementById('convKj').value);
   const out = document.getElementById('convKcal');
@@ -1482,6 +1564,11 @@ function latestWeightRecord() {
 function calcGoalWeight() {
   const h = parseFloat(document.getElementById('convGoalHeight').value);   // cm
   const bmi = parseFloat(document.getElementById('convGoalBmi').value);    // 目标 BMI
+  // 记忆输入：退出页面再进入会自动回填
+  localStorage.setItem(CONV_GOAL_KEY, JSON.stringify({
+    height: document.getElementById('convGoalHeight').value,
+    bmi: document.getElementById('convGoalBmi').value
+  }));
   const box = document.getElementById('convGoalResult');
   if (isNaN(h) || isNaN(bmi) || h <= 0 || bmi <= 0) {
     box.className = 'conv-result';
@@ -1518,9 +1605,10 @@ function fillLatestWeight() {
   if (document.getElementById('convGoalResult').classList.contains('active')) calcGoalWeight();
 }
 function clearConv() {
-  ['convKj', 'convKcal', 'convHeight', 'convWeight', 'convGoalHeight', 'convGoalBmi'].forEach(id => {
+  ['convKj', 'convKcal', 'convHeight', 'convWeight', 'convGoalHeight', 'convGoalBmi', 'convNote'].forEach(id => {
     document.getElementById(id).value = '';
   });
+  localStorage.setItem(CONV_GOAL_KEY, JSON.stringify({ height: '', bmi: '' }));
   const bmiBox = document.getElementById('convBmiResult');
   bmiBox.className = 'conv-result';
   bmiBox.textContent = '请输入身高和体重';
@@ -2433,7 +2521,7 @@ function closeWeeklyModal() {
 // 导出全部记录数据为 JSON 文件
 function exportAllData() {
   const data = {};
-  const jsonKeys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1', 'dr_cycles_v1'];
+  const jsonKeys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1', 'dr_cycles_v1', 'dr_conv_log_v1', 'dr_goal_v1'];
   jsonKeys.forEach(k => {
     try { data[k] = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { data[k] = null; }
   });
@@ -2529,7 +2617,8 @@ function importAllData(input) {
         'dr_weight_v1': (a, b) => mergeByDate(a, b),
         'dr_anniv_v1':  (a, b) => mergeById(a, b, 'ts'),
         'dr_diet_v1':   (a, b) => mergeByFullRecord(a, b),
-        'dr_cycles_v1': (a, b) => unionStrings(a, b)
+        'dr_cycles_v1': (a, b) => unionStrings(a, b),
+        'dr_conv_log_v1': (a, b) => mergeById(a, b, 'id')
       };
       Object.keys(arrayMerge).forEach(k => {
         if (data[k] === undefined || data[k] === null) return;
@@ -2548,6 +2637,12 @@ function importAllData(input) {
       if (data['dr_cycle_v1']) {
         if (!localStorage.getItem('dr_cycle_v1')) localStorage.setItem('dr_cycle_v1', String(data['dr_cycle_v1']));
       }
+      // 目标体重换算设置：本地没有时才用导入的（避免覆盖当前设置）
+      if (data['dr_goal_v1'] && typeof data['dr_goal_v1'] === 'object' && !Array.isArray(data['dr_goal_v1'])) {
+        let cur = null;
+        try { cur = JSON.parse(localStorage.getItem('dr_goal_v1') || 'null'); } catch (e) {}
+        if (!cur || !(cur.height || cur.bmi)) localStorage.setItem('dr_goal_v1', JSON.stringify(data['dr_goal_v1']));
+      }
       // 重新载入内存（账单日是对象结构，需重新解析）
       periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
       weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
@@ -2564,6 +2659,7 @@ function importAllData(input) {
       if (cycleStart && cycleList.indexOf(cycleStart) < 0) cycleList.push(cycleStart);
       alert('导入成功，已与本地数据合并共存');
       renderAll();
+      restoreConvTools();
     } catch (e) {
       alert('导入失败：文件格式不正确');
     }
@@ -2611,10 +2707,11 @@ function init() {
   renderPeriod();
   renderAnniv();
   checkWeeklyPopup();
+  restoreConvTools();
 }
 
 // ====== 云端同步（自托管后端）======
-const SYNC_KEYS_JSON = ['dr_period_v1','dr_weight_v1','dr_anniv_v1','dr_diet_v1','dr_bill_month_v1','dr_bill_year_v1','dr_cycles_v1'];
+const SYNC_KEYS_JSON = ['dr_period_v1','dr_weight_v1','dr_anniv_v1','dr_diet_v1','dr_bill_month_v1','dr_bill_year_v1','dr_cycles_v1','dr_conv_log_v1','dr_goal_v1'];
 const SYNC_KEYS_RAW  = ['dr_cycle_v1'];
 const SYNC_KEYS = SYNC_KEYS_JSON.concat(SYNC_KEYS_RAW);
 const LS_SYNC_SERVER = 'dr_sync_server';
@@ -2645,6 +2742,7 @@ function applyState(d){
   try { cycleList = JSON.parse(localStorage.getItem(KEY_CYCLES) || '[]'); } catch(e){ cycleList = []; }
   _applying = false;
   try { renderAll(); } catch(e){}
+  try { restoreConvTools(); } catch(e){}
 }
 function scheduleSync(){
   if (_applying) return;
