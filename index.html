@@ -396,12 +396,18 @@
   .conv-log-title span { font-weight: 500; color: var(--text-light); }
   .conv-log { max-height: 240px; overflow-y: auto; border: 1.5px solid var(--border); border-radius: 8px; }
   .conv-log-empty { padding: 14px 10px; text-align: center; font-size: 12px; color: var(--text-light); }
-  .conv-log-item { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 12px; }
+  .conv-log-item { display: flex; align-items: flex-start; gap: 6px; padding: 9px 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
   .conv-log-item:last-child { border-bottom: none; }
-  .conv-log-item .li-note { flex: 0 0 auto; max-width: 5.5em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; color: var(--primary-dark); }
-  .conv-log-item .li-val { flex: 1; min-width: 0; line-height: 1.5; }
+  .conv-log-item .li-note { flex: 0 0 7em; max-width: 7em; white-space: normal; word-break: break-all; line-height: 1.45; font-weight: 700; color: var(--primary-dark); }
+  .conv-log-item .li-val { flex: 1; min-width: 0; line-height: 1.5; font-size: 11px; word-break: break-word; }
   .conv-log-item .li-time { display: block; font-size: 10px; color: var(--text-light); font-weight: 400; margin-top: 2px; }
-  .conv-log-item .li-del { flex: 0 0 auto; border: none; background: transparent; color: var(--danger); font-size: 15px; cursor: pointer; padding: 2px 6px; }
+  .conv-log-item .li-second { display: block; font-size: 11px; color: var(--text-light); margin-top: 2px; }
+  .conv-log-item .li-second.grams { color: var(--primary-dark); font-weight: 600; }
+  .conv-log-item .li-del { flex: 0 0 auto; border: none; background: transparent; color: var(--danger); font-size: 15px; cursor: pointer; padding: 0 2px; }
+  .conv-fixed { margin-top: 10px; border: 1.5px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .conv-fixed-title { background: var(--bg); padding: 7px 10px; font-size: 11px; color: var(--text-light); font-weight: 600; }
+  .conv-fixed-item { padding: 9px 10px; font-size: 12px; line-height: 1.7; border-top: 1px solid var(--border); }
+  .conv-fixed-item b { color: var(--primary-dark); }
 
   /* 内滑条容器：历史记录 / 饮食掉秤榜 */
   .hist-scroll, .diet-scroll {
@@ -653,6 +659,7 @@
         </div>
       </div>
       <div class="conv-result" id="convGoalResult">请输入身高和目标 BMI</div>
+      <div class="conv-fixed" id="convFixedRefs"></div>
       <div class="conv-note">目标体重(kg) = 目标BMI × 身高(m)²；体重差 = 目标体重 − 最近记录体重（负数表示还需减重）。输入的身高和目标 BMI 会自动记住，下次打开仍在。</div>
 
       <div class="conv-divider"></div>
@@ -660,21 +667,27 @@
       <div class="conv-sub">🔥 千焦 ⇄ 千卡（大卡）</div>
       <div class="conv-row">
         <div class="conv-field">
-          <label>千焦（kJ）</label>
+          <label>千焦（KJ）每100克</label>
           <input type="number" id="convKj" step="any" placeholder="输入千焦" oninput="convFromKj()">
         </div>
         <div class="conv-swap">⇄</div>
         <div class="conv-field">
-          <label>千卡 / 大卡（kcal）</label>
+          <label>千卡 / 大卡（kcal）每100克</label>
           <input type="number" id="convKcal" step="any" placeholder="输入千卡" oninput="convFromKcal()">
         </div>
       </div>
-      <div class="conv-field" style="margin-top:10px;">
-        <label>备注</label>
-        <input type="text" id="convNote" placeholder="如：饺子" autocomplete="off">
+      <div class="conv-row" style="margin-top:10px;">
+        <div class="conv-field">
+          <label>备注</label>
+          <input type="text" id="convNote" placeholder="如：菠菜魔芋饺子" autocomplete="off">
+        </div>
+        <div class="conv-field" style="flex:0 0 40%;">
+          <label>克数（g）</label>
+          <input type="number" id="convGrams" step="any" placeholder="如 500">
+        </div>
       </div>
       <button class="btn btn-primary" style="width:100%;margin-top:10px;" onclick="saveConvRecord()">记录这一笔</button>
-      <div class="conv-note">1 千卡（大卡）= 4.184 千焦；输入任意一侧，另一侧自动换算。填好备注后点「记录这一笔」，下方会存成一条「备注 千焦＝大卡」。</div>
+      <div class="conv-note">1 千卡（大卡）= 4.184 千焦；输入的是每100克含量。填好备注和克数后点「记录这一笔」，下方会同时记下每100克与实际克数的热量。</div>
 
       <div class="conv-log-title">📝 换算记录 <span id="convLogCount"></span></div>
       <div id="convLog" class="conv-log"></div>
@@ -1482,13 +1495,24 @@ function renderConvLog() {
   const cnt = document.getElementById('convLogCount');
   if (cnt) cnt.textContent = list.length ? '共 ' + list.length + ' 条' : '';
   if (!list.length) { box.innerHTML = '<div class="conv-log-empty">暂无换算记录</div>'; return; }
-  box.innerHTML = list.map(it =>
-    '<div class="conv-log-item">'
-    + '<span class="li-note">' + convEsc(it.note || '未备注') + '</span>'
-    + '<span class="li-val">' + convNum(it.kj) + ' 千焦 ＝ ' + convNum(it.kcal) + ' 大卡'
-    + '<span class="li-time">' + convTime(it.ts || Date.now()) + '</span></span>'
-    + '<button class="li-del" title="删除" onclick="deleteConvRecord(\'' + convEsc(it.id) + '\')">✕</button>'
-    + '</div>').join('');
+  box.innerHTML = list.map(it => {
+    const g = Number(it.grams);
+    const hasG = it.grams !== undefined && it.grams !== null && !isNaN(g) && g > 0;
+    const line1 = convNum(it.kj) + ' 千焦 ＝ ' + convNum(it.kcal) + ' 大卡' + (hasG ? '（每100克）' : '');
+    let line2;
+    if (hasG) {
+      const tKj = Number(it.kj) * g / 100;
+      line2 = '<span class="li-second grams">' + convNum(tKj) + ' 千焦 ＝ '
+        + convNum(tKj / KJ_PER_KCAL) + ' 大卡（' + convNum(g) + '克）</span>';
+    } else {
+      line2 = '<span class="li-time">' + convTime(it.ts || Date.now()) + '</span>';
+    }
+    return '<div class="conv-log-item">'
+      + '<span class="li-note">' + convEsc(it.note || '未备注') + '</span>'
+      + '<span class="li-val">' + line1 + line2 + '</span>'
+      + '<button class="li-del" title="删除" onclick="deleteConvRecord(\'' + convEsc(it.id) + '\')">✕</button>'
+      + '</div>';
+  }).join('');
 }
 function saveConvRecord() {
   const kjEl = document.getElementById('convKj'), kcalEl = document.getElementById('convKcal');
@@ -1498,14 +1522,19 @@ function saveConvRecord() {
   kcal = kj / KJ_PER_KCAL; // 以千焦为准，保证两侧自洽
   const noteEl = document.getElementById('convNote');
   const note = (noteEl.value || '').trim();
+  const gramsEl = document.getElementById('convGrams');
+  const grams = parseFloat(gramsEl.value);
   const list = loadConvLog();
   list.unshift({
     id: String(Date.now()) + '-' + Math.random().toString(36).slice(2, 7),
     note: note || '未备注',
-    kj: +kj.toFixed(2), kcal: +kcal.toFixed(2), ts: Date.now()
+    kj: +kj.toFixed(2), kcal: +kcal.toFixed(2),
+    grams: (!isNaN(grams) && grams > 0) ? grams : 0,
+    ts: Date.now()
   });
   localStorage.setItem(CONV_LOG_KEY, JSON.stringify(list));
   noteEl.value = '';
+  gramsEl.value = '';
   renderConvLog();
 }
 function deleteConvRecord(id) {
@@ -1561,6 +1590,40 @@ function latestWeightRecord() {
   if (!weights || weights.length === 0) return null;
   return weights.slice().sort((a, b) => a.date < b.date ? -1 : 1).pop();
 }
+// 固定参考：BMI＜24.9 与 BMI＜23.9 对应的目标体重及差值（kg / 斤）
+function convRefHeight() {
+  const g = parseFloat(document.getElementById('convGoalHeight').value);
+  if (!isNaN(g) && g > 0) return g;
+  const b = parseFloat(document.getElementById('convHeight').value);
+  if (!isNaN(b) && b > 0) return b;
+  return 163; // 与体重统计卡默认身高一致
+}
+function renderGoalRefs() {
+  const box = document.getElementById('convFixedRefs'); if (!box) return;
+  const h = convRefHeight(), m = h / 100;
+  const rec = latestWeightRecord();
+  const rows = [
+    { bmi: 24.9, label: 'BMI＜24.9（疾病发生率最低）' },
+    { bmi: 23.9, label: 'BMI＜23.9（正常的BMI）' }
+  ].map(r => {
+    const target = r.bmi * m * m;
+    let diffText;
+    if (!rec) {
+      diffText = '<span style="color:var(--text-light);">暂无体重记录，无法计算差值</span>';
+    } else {
+      const diff = target - rec.val;
+      const kg = Math.abs(diff), jin = Math.abs(diff) * 2;
+      if (Math.abs(diff) < 0.05)   diffText = '<span style="color:var(--success);">已达目标</span>';
+      else if (diff < 0)           diffText = '还需减重 <b>' + kg.toFixed(2) + ' kg</b>（<b>' + jin.toFixed(2) + ' 斤</b>）';
+      else                         diffText = '<span style="color:var(--danger);">还需增重 ' + kg.toFixed(2) + ' kg（' + jin.toFixed(2) + ' 斤）</span>';
+    }
+    return '<div class="conv-fixed-item"><div>' + r.label + '：目标体重 <b>' + target.toFixed(2) + ' kg</b></div>'
+      + '<div>' + diffText + '</div></div>';
+  }).join('');
+  box.innerHTML = '<div class="conv-fixed-title">📌 固定参考 · 按身高 ' + convNum(h) + ' cm · 最近记录 '
+    + (rec ? rec.date + ' ' + convNum(rec.val) + ' kg' : '暂无') + '</div>' + rows;
+}
+
 function calcGoalWeight() {
   const h = parseFloat(document.getElementById('convGoalHeight').value);   // cm
   const bmi = parseFloat(document.getElementById('convGoalBmi').value);    // 目标 BMI
@@ -1569,6 +1632,7 @@ function calcGoalWeight() {
     height: document.getElementById('convGoalHeight').value,
     bmi: document.getElementById('convGoalBmi').value
   }));
+  renderGoalRefs();
   const box = document.getElementById('convGoalResult');
   if (isNaN(h) || isNaN(bmi) || h <= 0 || bmi <= 0) {
     box.className = 'conv-result';
@@ -1605,7 +1669,7 @@ function fillLatestWeight() {
   if (document.getElementById('convGoalResult').classList.contains('active')) calcGoalWeight();
 }
 function clearConv() {
-  ['convKj', 'convKcal', 'convHeight', 'convWeight', 'convGoalHeight', 'convGoalBmi', 'convNote'].forEach(id => {
+  ['convKj', 'convKcal', 'convHeight', 'convWeight', 'convGoalHeight', 'convGoalBmi', 'convNote', 'convGrams'].forEach(id => {
     document.getElementById(id).value = '';
   });
   localStorage.setItem(CONV_GOAL_KEY, JSON.stringify({ height: '', bmi: '' }));
@@ -2682,6 +2746,7 @@ function renderAll() {
   renderPeriod();
   renderAnniv();
   renderBill();
+  try { renderGoalRefs(); } catch (e) {}
 }
 function init() {
   // 顶部日期（仅体重页显示）
