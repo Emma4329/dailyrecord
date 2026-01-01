@@ -271,6 +271,7 @@
   .scale-side-value { font-size: 13px; font-weight: 700; color: #fff; }
   .scale-score { margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.92); }
   .scale-arrow { font-size: 10px; margin-right: 2px; }
+  .scale-bmi { margin-top: 14px; font-size: 13px; color: #fff; background: rgba(255,255,255,0.16); border-radius: 10px; padding: 8px 10px; text-align: center; font-weight: 600; }
   .chart-popup {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     box-shadow: var(--shadow); padding: 12px 14px; margin-top: 8px;
@@ -406,6 +407,7 @@
             <div class="scale-side-value">--</div>
           </div>
         </div>
+        <div class="scale-bmi" id="scaleBmi">--</div>
       </div>
     </div>
 
@@ -953,18 +955,26 @@ function renderWeight() {
   const scaleWeight = document.getElementById('scaleWeight');
   const scaleTargetDiff = document.querySelector('#scaleTargetDiff .scale-side-value');
   const scaleLastDiff = document.querySelector('#scaleLastDiff .scale-side-value');
+  const scaleBmi = document.getElementById('scaleBmi');
+  const HEALTH_BMI = 24;
+  const MY_HEIGHT = 1.63;
 
   if (weights.length === 0) {
     scaleDate.textContent = '--';
     scaleWeight.textContent = '--';
     scaleTargetDiff.innerHTML = '--';
     scaleLastDiff.innerHTML = '--';
+    scaleBmi.textContent = '--';
   } else {
     const latest = weights[weights.length - 1];
     const prev = weights.length >= 2 ? weights[weights.length - 2] : null;
 
     scaleDate.textContent = getRelativeDayLabel(latest.date);
     scaleWeight.textContent = fmtKg(latest.val);
+
+    // 今日 BMI
+    const bmi = latest.val / (MY_HEIGHT * MY_HEIGHT);
+    scaleBmi.textContent = `今日BMI=${bmi.toFixed(2)}（健康的BMI=${HEALTH_BMI}）`;
 
     // 离目标还差（白色）
     const td = latest.val - weightTarget;
