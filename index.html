@@ -811,8 +811,26 @@ let weightTarget = 64; // 固定目标体重 64kg
 // ====== 账单日数据（两块互不关联）======
 // 账单日详情（按月）：{ rows:[{id,bank,billDay,repayDay}], monthCols:['10月','11月','12月'], monthVals:{'id|10月':金额} }
 // 年费（按年）：{ rows:[{id,cardNo,feeReq,feeTime}], yearCols:['2026年','2027年'], yearMarks:{'id|2026年':'ok'|'no'} }
+// 默认账单日详情：仅当本设备没有任何数据时使用（换设备也能看到固定的银行名/账单日/还款日）
+function defaultBillMonth() {
+  const rows = [
+    ['月供', 1, 1], ['招商', 13, 1], ['花呗', 31, 10], ['工商48', 15, 8],
+    ['工商78', 17, 10], ['交通', 28, 21], ['建行', 3, 22], ['平安', 4, 21], ['中信', 8, 26]
+  ].map((a, i) => ({ id: 1001 + i, bank: a[0], billDay: a[1], repayDay: a[2] }));
+  return { rows, monthCols: ['10月', '11月', '12月'], monthVals: {} };
+}
+// 默认年费：仅当本设备没有任何数据时使用（固定卡号/年费要求/年费时间）
+function defaultBillYear() {
+  const rows = [
+    ['招商2169', '免年费', ''], ['招商3360', '刷满6笔', '5月1日'], ['工商4378', '刷满5笔', '6月6日'],
+    ['工商5036', '刷满5笔', '6月6日'], ['工商6348', '刷满5笔', '4月9日'], ['交通8183', '刷满6笔', '8月8日'],
+    ['交通4525', '免年费', ''], ['建行8098', '免年费', ''], ['建行6001', '刷满6笔', '7月2日'],
+    ['平安8556', '刷满12笔', '3月20日'], ['平安0781', '刷满6笔', '11月4日'], ['中信1366', '刷满12笔', '3月22日']
+  ].map((a, i) => ({ id: 2001 + i, cardNo: a[0], feeReq: a[1], feeTime: a[2] }));
+  return { rows, yearCols: ['2026年', '2027年'], yearMarks: {} };
+}
 function loadBillMonth() {
-  const def = { rows: [], monthCols: ['10月', '11月', '12月'], monthVals: {} };
+  const def = defaultBillMonth();
   try {
     const raw = JSON.parse(localStorage.getItem(KEY_BILL_MONTH) || 'null');
     if (raw && Array.isArray(raw.rows)) {
@@ -826,7 +844,7 @@ function loadBillMonth() {
   return def;
 }
 function loadBillYear() {
-  const def = { rows: [], yearCols: ['2026年', '2027年'], yearMarks: {} };
+  const def = defaultBillYear();
   try {
     const raw = JSON.parse(localStorage.getItem(KEY_BILL_YEAR) || 'null');
     if (raw && Array.isArray(raw.rows)) {
