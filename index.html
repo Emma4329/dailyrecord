@@ -439,6 +439,7 @@
   .bill-move-btn { width:22px; height:18px; line-height:1; font-size:10px; padding:0; border:1px solid var(--border); background:#F4F4F6; border-radius:4px; cursor:pointer; color:var(--text-light); }
   .bill-move-btn:disabled { opacity:0.3; cursor:default; }
   .bill-move-btn:not(:disabled):hover { background:#E6E6EA; color:var(--primary); }
+  .bill-table .row-actions { display:flex; gap:4px; white-space:nowrap; }
 
   .pill {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
@@ -1991,14 +1992,28 @@ function billColHead(cols, idx, kind) {
 }
 
 // ====== 账单日详情（按月）======
+let billMonthEditingId = null; // 非空表示正在修改某条
 function openBillMonthModal() {
+  billMonthEditingId = null;
+  document.querySelector('#billMonthModal .bm-title').textContent = '新增账单日';
   document.getElementById('bmBank').value = '';
   document.getElementById('bmDay').value = '';
   document.getElementById('bmRepay').value = '';
   document.getElementById('billMonthModal').style.display = 'flex';
   setTimeout(() => document.getElementById('bmBank').focus(), 50);
 }
-function closeBillMonthModal() { document.getElementById('billMonthModal').style.display = 'none'; }
+function editBillMonth(id) {
+  const r = billMonth.rows.find(x => x.id === id);
+  if (!r) return;
+  billMonthEditingId = id;
+  document.querySelector('#billMonthModal .bm-title').textContent = '修改账单日';
+  document.getElementById('bmBank').value = r.bank;
+  document.getElementById('bmDay').value = r.billDay;
+  document.getElementById('bmRepay').value = r.repayDay;
+  document.getElementById('billMonthModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('bmBank').focus(), 50);
+}
+function closeBillMonthModal() { document.getElementById('billMonthModal').style.display = 'none'; billMonthEditingId = null; }
 function saveBillMonthDetail() {
   const bank = document.getElementById('bmBank').value.trim();
   const day = parseInt(document.getElementById('bmDay').value, 10);
@@ -2006,7 +2021,13 @@ function saveBillMonthDetail() {
   if (!bank) { alert('请填写银行名'); return; }
   if (!(day >= 1 && day <= 31)) { alert('请填写账单日（1-31）'); return; }
   if (!(repay >= 1 && repay <= 31)) { alert('请填写还款日（1-31）'); return; }
-  billMonth.rows.push({ id: Date.now(), bank, billDay: day, repayDay: repay });
+  if (billMonthEditingId) {
+    const r = billMonth.rows.find(x => x.id === billMonthEditingId);
+    if (r) { r.bank = bank; r.billDay = day; r.repayDay = repay; }
+  } else {
+    billMonth.rows.push({ id: Date.now(), bank, billDay: day, repayDay: repay });
+  }
+  billMonthEditingId = null;
   saveBillMonth(); closeBillMonthModal(); renderBill();
 }
 function deleteBillMonth(id) {
@@ -2037,20 +2058,40 @@ function moveMonthCol(idx, dir) {
 }
 
 // ====== 年费（按年）======
+let billYearEditingId = null; // 非空表示正在修改某条
 function openBillYearModal() {
+  billYearEditingId = null;
+  document.querySelector('#billYearModal .bm-title').textContent = '新增年费';
   document.getElementById('byCard').value = '';
   document.getElementById('byReq').value = '';
   document.getElementById('byTime').value = '';
   document.getElementById('billYearModal').style.display = 'flex';
   setTimeout(() => document.getElementById('byCard').focus(), 50);
 }
-function closeBillYearModal() { document.getElementById('billYearModal').style.display = 'none'; }
+function editBillYear(id) {
+  const r = billYear.rows.find(x => x.id === id);
+  if (!r) return;
+  billYearEditingId = id;
+  document.querySelector('#billYearModal .bm-title').textContent = '修改年费';
+  document.getElementById('byCard').value = r.cardNo;
+  document.getElementById('byReq').value = r.feeReq || '';
+  document.getElementById('byTime').value = r.feeTime || '';
+  document.getElementById('billYearModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('byCard').focus(), 50);
+}
+function closeBillYearModal() { document.getElementById('billYearModal').style.display = 'none'; billYearEditingId = null; }
 function saveBillYearFee() {
   const card = document.getElementById('byCard').value.trim();
   const req = document.getElementById('byReq').value.trim();
   const time = document.getElementById('byTime').value.trim();
   if (!card) { alert('请填写卡号'); return; }
-  billYear.rows.push({ id: Date.now(), cardNo: card, feeReq: req, feeTime: time });
+  if (billYearEditingId) {
+    const r = billYear.rows.find(x => x.id === billYearEditingId);
+    if (r) { r.cardNo = card; r.feeReq = req; r.feeTime = time; }
+  } else {
+    billYear.rows.push({ id: Date.now(), cardNo: card, feeReq: req, feeTime: time });
+  }
+  billYearEditingId = null;
   saveBillYear(); closeBillYearModal(); renderBill();
 }
 function deleteBillYear(id) {
@@ -2111,7 +2152,7 @@ function renderBill() {
     if (empty1) empty1.style.display = 'block';
   } else {
     if (empty1) empty1.style.display = 'none';
-    const act = r => `<td><div class="row-actions"><button class="icon-btn" title="删除" onclick="deleteBillMonth(${r.id})">🗑️</button></div></td>`;
+    const act = r => `<td><div class="row-actions"><button class="btn btn-outline" style="padding:3px 8px;font-size:11px;" onclick="editBillMonth(${r.id})">修改</button><button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="deleteBillMonth(${r.id})">删除</button></div></td>`;
     body1.innerHTML = billMonth.rows.map(r => `<tr>
       <td class="bill-name-cell" title="${r.bank}">${r.bank}</td>
       <td style="text-align:center;">${r.billDay}号</td>
@@ -2127,7 +2168,7 @@ function renderBill() {
     if (empty2) empty2.style.display = 'block';
   } else {
     if (empty2) empty2.style.display = 'none';
-    const act = r => `<td><div class="row-actions"><button class="icon-btn" title="删除" onclick="deleteBillYear(${r.id})">🗑️</button></div></td>`;
+    const act = r => `<td><div class="row-actions"><button class="btn btn-outline" style="padding:3px 8px;font-size:11px;" onclick="editBillYear(${r.id})">修改</button><button class="btn btn-danger" style="padding:3px 8px;font-size:11px;" onclick="deleteBillYear(${r.id})">删除</button></div></td>`;
     body2.innerHTML = billYear.rows.map(r => `<tr>
       <td class="bill-name-cell" title="${r.cardNo}">${r.cardNo}</td>
       <td class="bill-name-cell" title="${r.feeReq || ''}">${r.feeReq ? r.feeReq : '—'}</td>
