@@ -35,6 +35,8 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   }
   .top-bar h1 { font-size: 18px; font-weight: 700; }
+  .top-left { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  #syncBtn { display: inline-flex; align-items: center; gap: 3px; flex: none; }
   .top-date { font-size: 11px; opacity: 0.85; }
   .top-actions { display: flex; gap: 8px; align-items: center; }
   .btn-top {
@@ -451,7 +453,10 @@
 
 <!-- ====== 顶部标题栏 ====== -->
 <div class="top-bar">
-  <h1 id="topTitle">经期</h1>
+  <div class="top-left">
+    <h1 id="topTitle">经期</h1>
+    <button id="syncBtn" class="btn-top" onclick="toggleSyncPanel()">☁️ 同步</button>
+  </div>
   <span class="top-date" id="topDate"></span>
   <div class="top-actions" id="topActions" style="display:none;">
     <button class="btn-top" onclick="exportAllData()">导出全部</button>
@@ -2212,10 +2217,12 @@ function closeWeeklyModal() {
 // 导出全部记录数据为 JSON 文件
 function exportAllData() {
   const data = {};
-  const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1'];
-  keys.forEach(k => {
-    try { data[k] = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { data[k] = []; }
+  const jsonKeys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1', 'dr_cycles_v1'];
+  jsonKeys.forEach(k => {
+    try { data[k] = JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { data[k] = null; }
   });
+  // 当前打卡周期起始日（原始字符串，非 JSON）
+  data['dr_cycle_v1'] = localStorage.getItem('dr_cycle_v1') || '';
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2236,19 +2243,30 @@ function importAllData(input) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1'];
-      keys.forEach(k => {
-        if (data[k] !== undefined) {
-          const v = Array.isArray(data[k]) ? data[k] : data[k];
-          localStorage.setItem(k, JSON.stringify(v));
+      const jsonKeys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1', 'dr_cycles_v1'];
+      jsonKeys.forEach(k => {
+        if (data[k] !== undefined && data[k] !== null) {
+          localStorage.setItem(k, JSON.stringify(data[k]));
         }
       });
+      // 当前打卡周期起始日（原始字符串）
+      if (data['dr_cycle_v1'] !== undefined && data['dr_cycle_v1'] !== null) {
+        localStorage.setItem('dr_cycle_v1', String(data['dr_cycle_v1']));
+      }
       // 重新载入内存（账单日是对象结构，需重新解析）
       periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
       weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
       annivs  = JSON.parse(localStorage.getItem(KEY_ANNIV)  || '[]');
+      try { dietHistory = JSON.parse(localStorage.getItem('dr_diet_v1') || '[]'); } catch (e) { dietHistory = []; }
       billMonth = loadBillMonth();
       billYear  = loadBillYear();
+      // 打卡周期（排行榜数据源）
+      cycleStart = localStorage.getItem(KEY_CYCLE) || '';
+      try {
+        const cy = JSON.parse(localStorage.getItem(KEY_CYCLES) || '[]');
+        cycleList = Array.isArray(cy) ? cy.filter(x => typeof x === 'string' && x) : [];
+      } catch (e) { cycleList = []; }
+      if (cycleStart && cycleList.indexOf(cycleStart) < 0) cycleList.push(cycleStart);
       alert('导入成功，已覆盖本地数据');
       renderAll();
     } catch (e) {
@@ -2400,19 +2418,35 @@ async function pushIfEmpty(){
 })();
 // ===== 同步设置 UI =====
 function syncStatus(t){ const el = document.getElementById('syncStatus'); if (el) el.textContent = t; }
+function toggleSyncPanel(){
+  const p = document.getElementById('syncPanel');
+  if (!p) return;
+  const open = p.style.display !== 'block';
+  p.style.display = open ? 'block' : 'none';
+  if (open) {
+    document.getElementById('syncServer').value = syncServer();
+    document.getElementById('syncToken').value = syncToken();
+    syncStatus(_lastSavedAt ? ('上次云端保存 · ' + new Date(_lastSavedAt).toLocaleString())
+      : (syncServer() ? '已配置，尚未同步' : '尚未配置服务器'));
+  }
+}
+document.addEventListener('click', function(e){
+  const p = document.getElementById('syncPanel');
+  if (!p || p.style.display !== 'block') return;
+  if (p.contains(e.target) || (e.target.closest && e.target.closest('#syncBtn'))) return;
+  p.style.display = 'none';
+});
 function injectSyncUI(){
-  if (document.getElementById('syncBtn')) return;
-  const css = '#syncBtn{position:fixed;right:14px;bottom:14px;z-index:9999;background:#2b7de9;color:#fff;border:none;border-radius:24px;padding:10px 16px;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer}'
-    + '#syncPanel{position:fixed;right:14px;bottom:64px;z-index:9999;width:300px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);padding:16px;display:none;font-size:13px;color:#222}'
+  if (document.getElementById('syncPanel')) return;
+  const css = '#syncBtn{background:rgba(255,255,255,.22);border:none;cursor:pointer}'
+    + '#syncBtn:active{background:rgba(255,255,255,.35)}'
+    + '#syncPanel{position:fixed;left:12px;top:58px;z-index:9999;width:300px;max-width:calc(100vw - 24px);background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);padding:16px;display:none;font-size:13px;color:#222}'
     + '#syncPanel h3{margin:0 0 10px;font-size:15px}#syncPanel label{display:block;margin:8px 0 4px}'
     + '#syncPanel input{width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px}'
     + '#syncPanel .row{margin-top:10px;display:flex;gap:8px}#syncPanel button{flex:1;padding:8px;border:none;border-radius:6px;cursor:pointer;font-size:13px}'
     + '#syncPanel .save{background:#2b7de9;color:#fff}#syncPanel .test{background:#eee;color:#333}'
     + '#syncStatus{margin-top:10px;color:#666;min-height:16px;word-break:break-all}';
   const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
-  const btn = document.createElement('button'); btn.id = 'syncBtn'; btn.textContent = '☁️ 同步';
-  btn.onclick = function(){ const p = document.getElementById('syncPanel'); p.style.display = (p.style.display === 'none' ? 'block' : 'none'); };
-  document.body.appendChild(btn);
   const p = document.createElement('div'); p.id = 'syncPanel';
   p.innerHTML = '<h3>云端同步设置</h3>'
     + '<label>服务器地址（如 https://dr.你的域名）</label>'
