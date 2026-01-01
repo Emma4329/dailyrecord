@@ -644,6 +644,22 @@
       </div>
       <div class="conv-result" id="convBmiResult">请输入身高和体重</div>
       <div class="conv-note">BMI = 体重(kg) ÷ 身高(m)²；中国标准：偏瘦 &lt;18.5，正常 18.5–23.9，超重 24–27.9，肥胖 ≥28。</div>
+
+      <div class="conv-divider"></div>
+
+      <div class="conv-sub">🎯 目标体重换算</div>
+      <div class="conv-row">
+        <div class="conv-field">
+          <label>身高（cm）</label>
+          <input type="number" id="convGoalHeight" step="any" placeholder="如 163" oninput="calcGoalWeight()">
+        </div>
+        <div class="conv-field">
+          <label>目标 BMI</label>
+          <input type="number" id="convGoalBmi" step="any" placeholder="如 22" oninput="calcGoalWeight()">
+        </div>
+      </div>
+      <div class="conv-result" id="convGoalResult">请输入身高和目标 BMI</div>
+      <div class="conv-note">目标体重(kg) = 目标BMI × 身高(m)²；体重差 = 目标体重 − 最近记录体重（负数表示还需减重）。</div>
     </div>
   </div>
 
@@ -1459,19 +1475,58 @@ function calcBmi() {
     + ' <span style="font-weight:700;color:' + color + ';">' + label + '</span>'
     + '<div class="conv-result-sub">该身高对应的正常体重范围约 ' + lo.toFixed(1) + ' – ' + hi.toFixed(1) + ' kg</div>';
 }
+function latestWeightRecord() {
+  if (!weights || weights.length === 0) return null;
+  return weights.slice().sort((a, b) => a.date < b.date ? -1 : 1).pop();
+}
+function calcGoalWeight() {
+  const h = parseFloat(document.getElementById('convGoalHeight').value);   // cm
+  const bmi = parseFloat(document.getElementById('convGoalBmi').value);    // 目标 BMI
+  const box = document.getElementById('convGoalResult');
+  if (isNaN(h) || isNaN(bmi) || h <= 0 || bmi <= 0) {
+    box.className = 'conv-result';
+    box.textContent = '请输入身高和目标 BMI';
+    return;
+  }
+  const m = h / 100;
+  const goal = bmi * m * m;
+  let html = '目标体重 = <b style="font-size:22px;color:var(--primary);">' + goal.toFixed(2) + ' kg</b>';
+  const rec = latestWeightRecord();
+  if (!rec) {
+    html += '<div class="conv-result-sub">暂无体重记录，无法计算体重差</div>';
+  } else {
+    const diff = goal - rec.val;   // 目标体重 − 最近记录体重
+    let desc, color;
+    if (Math.abs(diff) < 0.05)    { desc = '已达目标体重'; color = 'var(--success)'; }
+    else if (diff < 0)            { desc = '还需减重 ' + Math.abs(diff).toFixed(2) + ' kg'; color = 'var(--success)'; }
+    else                          { desc = '还需增重 ' + diff.toFixed(2) + ' kg'; color = 'var(--danger)'; }
+    const sign = diff > 0 ? '+' : '';
+    html += '<div class="conv-result-sub">最近记录（' + rec.date + '）：' + fmtKg(rec.val) + ' kg</div>'
+      + '<div class="conv-result-sub">体重差 <b style="font-size:13px;color:' + color + ';">' + sign + diff.toFixed(2)
+      + ' kg</b>（目标 − 最近）· ' + desc + '</div>';
+  }
+  box.className = 'conv-result active';
+  box.innerHTML = html;
+}
 function fillLatestWeight() {
-  if (!weights || weights.length === 0) { alert('暂无体重记录，请先在上方记录体重'); return; }
-  const latest = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1).pop();
+  const latest = latestWeightRecord();
+  if (!latest) { alert('暂无体重记录，请先在上方记录体重'); return; }
   document.getElementById('convWeight').value = latest.val;
   const hEl = document.getElementById('convHeight');
   if (!hEl.value) hEl.value = 163; // 与体重统计卡默认身高一致
   calcBmi();
+  if (document.getElementById('convGoalResult').classList.contains('active')) calcGoalWeight();
 }
 function clearConv() {
-  ['convKj', 'convKcal', 'convHeight', 'convWeight'].forEach(id => { document.getElementById(id).value = ''; });
-  const box = document.getElementById('convBmiResult');
-  box.className = 'conv-result';
-  box.textContent = '请输入身高和体重';
+  ['convKj', 'convKcal', 'convHeight', 'convWeight', 'convGoalHeight', 'convGoalBmi'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  const bmiBox = document.getElementById('convBmiResult');
+  bmiBox.className = 'conv-result';
+  bmiBox.textContent = '请输入身高和体重';
+  const goalBox = document.getElementById('convGoalResult');
+  goalBox.className = 'conv-result';
+  goalBox.textContent = '请输入身高和目标 BMI';
 }
 
 function totalChangeJin(list) {
