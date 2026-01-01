@@ -271,7 +271,8 @@
   .scale-side-value { font-size: 13px; font-weight: 700; color: #fff; }
   .scale-score { margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.92); }
   .scale-arrow { font-size: 10px; margin-right: 2px; }
-  .scale-bmi { margin-top: 14px; font-size: 13px; color: #fff; background: rgba(255,255,255,0.16); border-radius: 10px; padding: 8px 10px; text-align: center; font-weight: 600; }
+  .scale-bmi { margin-top: 14px; font-size: 16px; line-height: 1.5; color: #fff; background: rgba(255,255,255,0.16); border-radius: 10px; padding: 9px 10px; text-align: center; font-weight: 700; }
+  .scale-bmi .bmi-sub { font-size: 11px; font-weight: 500; opacity: 0.92; }
   .chart-popup {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     box-shadow: var(--shadow); padding: 12px 14px; margin-top: 8px;
@@ -975,7 +976,7 @@ function renderWeight() {
 
     // 今日 BMI
     const bmi = latest.val / (MY_HEIGHT * MY_HEIGHT);
-    scaleBmi.textContent = `今日BMI=${bmi.toFixed(2)}（健康BMI=${HEALTH_BMI}，超重BMI=${OVERWEIGHT_BMI}）`;
+    scaleBmi.innerHTML = `今日BMI=${bmi.toFixed(2)}<br><span class="bmi-sub">（健康BMI=${HEALTH_BMI}，超重BMI=${OVERWEIGHT_BMI}）</span>`;
 
     // 离目标还差（白色）
     const td = latest.val - weightTarget;
