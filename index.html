@@ -834,16 +834,70 @@ function defaultBillYear() {
   ].map((a, i) => ({ id: 2001 + i, cardNo: a[0], feeReq: a[1], feeTime: a[2] }));
   return { rows, yearCols: ['2026年', '2027年'], yearMarks: {} };
 }
+// ====== 账单行去重 / 合并（按业务内容，不按 id）======
+// 账单日详情：银行名 + 账单日 + 还款日 相同即视为同一行
+// 年费：卡号相同即视为同一行
+function billRowKey(r, isMonth) {
+  const n = v => String(v === undefined || v === null ? '' : v).trim();
+  if (isMonth) return n(r.bank) + '|' + n(r.billDay) + '|' + n(r.repayDay);
+  return n(r.cardNo) || ('id:' + n(r.id));
+}
+function mergeBillVal(vals, key, val, isMonth) {
+  if (vals[key] === undefined) { vals[key] = val; return; }
+  if (isMonth) {
+    // 金额：本地为 0/空时用导入的非零值补全，其余保留本地
+    const cur = Number(vals[key]), nv = Number(val);
+    if ((!isFinite(cur) || cur === 0) && isFinite(nv) && nv !== 0) vals[key] = val;
+  } else {
+    // 年费标记：本地为 ❌ 且导入为 ✅ 时取 ✅
+    if (vals[key] === 'no' && val === 'ok') vals[key] = 'ok';
+  }
+}
+// 把重复行折叠为一行，并把金额/标记键重映射到保留下来的行 id
+function normalizeBillState(state, isMonth) {
+  const colsKey = isMonth ? 'monthCols' : 'yearCols';
+  const valsKey = isMonth ? 'monthVals' : 'yearMarks';
+  const rows = [], kept = new Map(), remap = new Map();
+  (state.rows || []).forEach(r => {
+    if (!r) return;
+    const k = billRowKey(r, isMonth);
+    if (kept.has(k)) {
+      const keep = kept.get(k);
+      Object.keys(r).forEach(f => {
+        if (f === 'id') return;
+        if ((keep[f] === undefined || keep[f] === '' || keep[f] === null) && r[f] !== undefined && r[f] !== '') keep[f] = r[f];
+      });
+      if (r.id !== undefined) remap.set(String(r.id), keep.id);
+    } else { kept.set(k, r); rows.push(r); }
+  });
+  const vals = {};
+  Object.keys(state[valsKey] || {}).forEach(k => {
+    const p = k.indexOf('|');
+    if (p < 0) { vals[k] = state[valsKey][k]; return; }
+    const rid = k.slice(0, p), col = k.slice(p + 1);
+    const nid = remap.has(rid) ? remap.get(rid) : rid;
+    mergeBillVal(vals, nid + '|' + col, state[valsKey][k], isMonth);
+  });
+  const out = { rows };
+  out[colsKey] = state[colsKey] || [];
+  out[valsKey] = vals;
+  return out;
+}
 function loadBillMonth() {
   const def = defaultBillMonth();
   try {
     const raw = JSON.parse(localStorage.getItem(KEY_BILL_MONTH) || 'null');
     if (raw && Array.isArray(raw.rows)) {
-      return {
+      const st = normalizeBillState({
         rows: raw.rows,
         monthCols: Array.isArray(raw.monthCols) && raw.monthCols.length ? raw.monthCols : def.monthCols,
         monthVals: raw.monthVals || {}
-      };
+      }, true);
+      // 自动清理历史上合并产生的重复行
+      if (st.rows.length !== raw.rows.length) {
+        try { localStorage.setItem(KEY_BILL_MONTH, JSON.stringify(st)); } catch (e) {}
+      }
+      return st;
     }
   } catch (e) {}
   return def;
@@ -853,11 +907,16 @@ function loadBillYear() {
   try {
     const raw = JSON.parse(localStorage.getItem(KEY_BILL_YEAR) || 'null');
     if (raw && Array.isArray(raw.rows)) {
-      return {
+      const st = normalizeBillState({
         rows: raw.rows,
         yearCols: Array.isArray(raw.yearCols) && raw.yearCols.length ? raw.yearCols : def.yearCols,
         yearMarks: raw.yearMarks || {}
-      };
+      }, false);
+      // 自动清理历史上合并产生的重复行
+      if (st.rows.length !== raw.rows.length) {
+        try { localStorage.setItem(KEY_BILL_YEAR, JSON.stringify(st)); } catch (e) {}
+      }
+      return st;
     }
   } catch (e) {}
   return def;
@@ -2265,12 +2324,36 @@ function mergeBillState(cur, imp) {
   const isMonth = imp.monthCols !== undefined;
   const colsKey = isMonth ? 'monthCols' : 'yearCols';
   const valsKey = isMonth ? 'monthVals' : 'yearMarks';
-  const rows = mergeById(cur.rows || [], imp.rows || [], 'id');
-  const curCols = cur[colsKey] || [];
-  const impCols = imp[colsKey] || [];
-  const cols = curCols.slice();
-  impCols.forEach(c => { if (cols.indexOf(c) < 0) cols.push(c); });
-  const vals = Object.assign({}, cur[valsKey] || {}, imp[valsKey] || {});
+  // 按业务内容合并行（银行名+账单日+还款日 / 卡号），不按 id
+  const rows = [], kept = new Map(), remap = new Map();
+  const addRows = list => (list || []).forEach(r => {
+    if (!r) return;
+    const k = billRowKey(r, isMonth);
+    if (kept.has(k)) {
+      const keep = kept.get(k);
+      Object.keys(r).forEach(f => {
+        if (f === 'id') return;
+        if ((keep[f] === undefined || keep[f] === '' || keep[f] === null) && r[f] !== undefined && r[f] !== '') keep[f] = r[f];
+      });
+      if (r.id !== undefined) remap.set(String(r.id), keep.id);
+    } else { kept.set(k, r); rows.push(r); }
+  });
+  addRows(cur.rows);
+  addRows(imp.rows);
+  // 列名取并集
+  const cols = (cur[colsKey] || []).slice();
+  (imp[colsKey] || []).forEach(c => { if (cols.indexOf(c) < 0) cols.push(c); });
+  // 金额/标记：把导入行的 id 重映射到合并后保留的行 id
+  const vals = {};
+  const applyVals = src => Object.keys(src || {}).forEach(k => {
+    const p = k.indexOf('|');
+    if (p < 0) return;
+    const rid = k.slice(0, p), col = k.slice(p + 1);
+    const nid = remap.has(rid) ? remap.get(rid) : rid;
+    mergeBillVal(vals, nid + '|' + col, src[k], isMonth);
+  });
+  applyVals(cur[valsKey]);
+  applyVals(imp[valsKey]);
   const out = { rows };
   out[colsKey] = cols;
   out[valsKey] = vals;
