@@ -379,6 +379,20 @@
   }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
 
+  /* ====== 换算工具卡片（体重页最下方） ====== */
+  .conv-sub { font-size: 13px; font-weight: 700; color: var(--primary-dark); margin-bottom: 10px; }
+  .conv-row { display: flex; align-items: flex-end; gap: 8px; }
+  .conv-field { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+  .conv-field label { font-size: 11px; color: var(--text-light); font-weight: 600; }
+  .conv-field input { font-size: 14px; padding: 9px 10px; }
+  .conv-swap { flex: 0 0 24px; text-align: center; color: var(--primary); font-size: 17px; font-weight: 700; padding-bottom: 8px; }
+  .conv-divider { height: 1px; background: var(--border); margin: 16px 0; }
+  .conv-note { font-size: 11px; color: var(--text-light); line-height: 1.6; margin-top: 8px; }
+  .conv-mini { padding: 7px 10px; font-size: 12px; flex: 1; }
+  .conv-result { margin-top: 10px; padding: 10px 12px; border-radius: 8px; background: var(--bg); font-size: 14px; color: var(--text-light); text-align: center; }
+  .conv-result.active { background: #fff; border: 1.5px solid var(--border); color: var(--text); }
+  .conv-result-sub { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
   /* 内滑条容器：历史记录 / 饮食掉秤榜 */
   .hist-scroll, .diet-scroll {
     min-height: 576px; max-height: 576px; overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -591,6 +605,45 @@
         </table>
       </div>
       <div id="cycleBoardEmpty" class="empty-tip">暂无打卡周期</div>
+    </div>
+
+    <!-- 换算工具：千焦⇄千卡、BMI -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🧮</span>换算工具</div>
+
+      <div class="conv-sub">🔥 千焦 ⇄ 千卡（大卡）</div>
+      <div class="conv-row">
+        <div class="conv-field">
+          <label>千焦（kJ）</label>
+          <input type="number" id="convKj" step="any" placeholder="输入千焦" oninput="convFromKj()">
+        </div>
+        <div class="conv-swap">⇄</div>
+        <div class="conv-field">
+          <label>千卡 / 大卡（kcal）</label>
+          <input type="number" id="convKcal" step="any" placeholder="输入千卡" oninput="convFromKcal()">
+        </div>
+      </div>
+      <div class="conv-note">1 千卡（大卡）= 4.184 千焦；输入任意一侧，另一侧自动换算。</div>
+
+      <div class="conv-divider"></div>
+
+      <div class="conv-sub">⚖️ BMI 换算</div>
+      <div class="conv-row">
+        <div class="conv-field">
+          <label>身高（cm）</label>
+          <input type="number" id="convHeight" step="any" placeholder="如 163" oninput="calcBmi()">
+        </div>
+        <div class="conv-field">
+          <label>体重（kg）</label>
+          <input type="number" id="convWeight" step="any" placeholder="如 55.5" oninput="calcBmi()">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-outline conv-mini" onclick="fillLatestWeight()">用最新体重</button>
+        <button class="btn btn-outline conv-mini" onclick="clearConv()">清空</button>
+      </div>
+      <div class="conv-result" id="convBmiResult">请输入身高和体重</div>
+      <div class="conv-note">BMI = 体重(kg) ÷ 身高(m)²；中国标准：偏瘦 &lt;18.5，正常 18.5–23.9，超重 24–27.9，肥胖 ≥28。</div>
     </div>
   </div>
 
@@ -1372,6 +1425,55 @@ function editWeight(ts) {
 }
 
 // 区间总变化（斤）：末-初，负=减重；1kg=2斤
+// ====== 换算工具：千焦⇄千卡、BMI ======
+const KJ_PER_KCAL = 4.184;
+function convFromKj() {
+  const v = parseFloat(document.getElementById('convKj').value);
+  const out = document.getElementById('convKcal');
+  out.value = isNaN(v) ? '' : String(+(v / KJ_PER_KCAL).toFixed(2));
+}
+function convFromKcal() {
+  const v = parseFloat(document.getElementById('convKcal').value);
+  const out = document.getElementById('convKj');
+  out.value = isNaN(v) ? '' : String(+(v * KJ_PER_KCAL).toFixed(2));
+}
+function calcBmi() {
+  const h = parseFloat(document.getElementById('convHeight').value); // cm
+  const w = parseFloat(document.getElementById('convWeight').value); // kg
+  const box = document.getElementById('convBmiResult');
+  if (isNaN(h) || isNaN(w) || h <= 0 || w <= 0) {
+    box.className = 'conv-result';
+    box.textContent = '请输入身高和体重';
+    return;
+  }
+  const m = h / 100;
+  const bmi = w / (m * m);
+  let label, color;
+  if (bmi < 18.5)      { label = '偏瘦'; color = 'var(--info)'; }
+  else if (bmi < 24)   { label = '正常'; color = 'var(--success)'; }
+  else if (bmi <= 27.9){ label = '超重'; color = 'var(--warning)'; }
+  else                 { label = '肥胖'; color = 'var(--danger)'; }
+  const lo = 18.5 * m * m, hi = 23.9 * m * m;
+  box.className = 'conv-result active';
+  box.innerHTML = 'BMI = <b style="font-size:22px;color:' + color + ';">' + bmi.toFixed(2) + '</b>'
+    + ' <span style="font-weight:700;color:' + color + ';">' + label + '</span>'
+    + '<div class="conv-result-sub">该身高对应的正常体重范围约 ' + lo.toFixed(1) + ' – ' + hi.toFixed(1) + ' kg</div>';
+}
+function fillLatestWeight() {
+  if (!weights || weights.length === 0) { alert('暂无体重记录，请先在上方记录体重'); return; }
+  const latest = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1).pop();
+  document.getElementById('convWeight').value = latest.val;
+  const hEl = document.getElementById('convHeight');
+  if (!hEl.value) hEl.value = 163; // 与体重统计卡默认身高一致
+  calcBmi();
+}
+function clearConv() {
+  ['convKj', 'convKcal', 'convHeight', 'convWeight'].forEach(id => { document.getElementById(id).value = ''; });
+  const box = document.getElementById('convBmiResult');
+  box.className = 'conv-result';
+  box.textContent = '请输入身高和体重';
+}
+
 function totalChangeJin(list) {
   if (list.length < 2) return '--';
   const sorted = list.slice().sort((a, b) => a.date < b.date ? -1 : 1);
