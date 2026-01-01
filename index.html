@@ -957,6 +957,7 @@ function renderWeight() {
   const scaleLastDiff = document.querySelector('#scaleLastDiff .scale-side-value');
   const scaleBmi = document.getElementById('scaleBmi');
   const HEALTH_BMI = 24;
+  const OVERWEIGHT_BMI = 27.9;
   const MY_HEIGHT = 1.63;
 
   if (weights.length === 0) {
@@ -974,7 +975,7 @@ function renderWeight() {
 
     // 今日 BMI
     const bmi = latest.val / (MY_HEIGHT * MY_HEIGHT);
-    scaleBmi.textContent = `今日BMI=${bmi.toFixed(2)}（健康的BMI=${HEALTH_BMI}）`;
+    scaleBmi.textContent = `今日BMI=${bmi.toFixed(2)}（健康BMI=${HEALTH_BMI}，超重BMI=${OVERWEIGHT_BMI}）`;
 
     // 离目标还差（白色）
     const td = latest.val - weightTarget;
