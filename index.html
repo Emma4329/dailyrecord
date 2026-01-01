@@ -2236,6 +2236,46 @@ function exportAllData() {
   URL.revokeObjectURL(url);
   closeWeeklyModal();
 }
+// ====== 导入合并辅助（共存而非覆盖）======
+function mergeById(existing, incoming, idKey) {
+  const m = new Map();
+  (existing || []).forEach(x => { if (x && x[idKey] !== undefined) m.set(x[idKey], x); });
+  (incoming || []).forEach(x => { if (x && x[idKey] !== undefined) m.set(x[idKey], x); });
+  return Array.from(m.values());
+}
+function mergeByDate(existing, incoming) {
+  const m = new Map();
+  (existing || []).forEach(x => { if (x && x.date) m.set(x.date, x); });
+  (incoming || []).forEach(x => { if (x && x.date) m.set(x.date, x); });
+  return Array.from(m.values()).sort((a, b) => a.date < b.date ? -1 : 1);
+}
+function mergeByFullRecord(existing, incoming) {
+  const set = new Set(); const arr = [];
+  existing.concat(incoming).forEach(x => {
+    const s = JSON.stringify(x); if (!set.has(s)) { set.add(s); arr.push(x); }
+  });
+  return arr;
+}
+function unionStrings(existing, incoming) {
+  const set = new Set(existing || []);
+  (incoming || []).forEach(x => { if (x) set.add(x); });
+  return Array.from(set);
+}
+function mergeBillState(cur, imp) {
+  const isMonth = imp.monthCols !== undefined;
+  const colsKey = isMonth ? 'monthCols' : 'yearCols';
+  const valsKey = isMonth ? 'monthVals' : 'yearMarks';
+  const rows = mergeById(cur.rows || [], imp.rows || [], 'id');
+  const curCols = cur[colsKey] || [];
+  const impCols = imp[colsKey] || [];
+  const cols = curCols.slice();
+  impCols.forEach(c => { if (cols.indexOf(c) < 0) cols.push(c); });
+  const vals = Object.assign({}, cur[valsKey] || {}, imp[valsKey] || {});
+  const out = { rows };
+  out[colsKey] = cols;
+  out[valsKey] = vals;
+  return out;
+}
 function importAllData(input) {
   const file = input.files && input.files[0];
   if (!file) return;
@@ -2243,15 +2283,30 @@ function importAllData(input) {
   reader.onload = () => {
     try {
       const data = JSON.parse(reader.result);
-      const jsonKeys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1', 'dr_bill_month_v1', 'dr_bill_year_v1', 'dr_cycles_v1'];
-      jsonKeys.forEach(k => {
-        if (data[k] !== undefined && data[k] !== null) {
-          localStorage.setItem(k, JSON.stringify(data[k]));
-        }
+      // 数组类数据：按唯一键合并（共存，不覆盖）
+      const arrayMerge = {
+        'dr_period_v1': (a, b) => mergeById(a, b, 'ts'),
+        'dr_weight_v1': (a, b) => mergeByDate(a, b),
+        'dr_anniv_v1':  (a, b) => mergeById(a, b, 'ts'),
+        'dr_diet_v1':   (a, b) => mergeByFullRecord(a, b),
+        'dr_cycles_v1': (a, b) => unionStrings(a, b)
+      };
+      Object.keys(arrayMerge).forEach(k => {
+        if (data[k] === undefined || data[k] === null) return;
+        let cur = [];
+        try { cur = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { cur = []; }
+        localStorage.setItem(k, JSON.stringify(arrayMerge[k](cur, data[k])));
       });
-      // 当前打卡周期起始日（原始字符串）
-      if (data['dr_cycle_v1'] !== undefined && data['dr_cycle_v1'] !== null) {
-        localStorage.setItem('dr_cycle_v1', String(data['dr_cycle_v1']));
+      // 账单日 / 年费：按 id 合并行，金额/标记按键合并
+      ['dr_bill_month_v1', 'dr_bill_year_v1'].forEach(k => {
+        if (data[k] === undefined || data[k] === null) return;
+        let cur = {};
+        try { const o = JSON.parse(localStorage.getItem(k) || 'null'); if (o && typeof o === 'object') cur = o; } catch (e) {}
+        localStorage.setItem(k, JSON.stringify(mergeBillState(cur, data[k])));
+      });
+      // 当前打卡周期起始日：本地已有则保留，否则用导入的
+      if (data['dr_cycle_v1']) {
+        if (!localStorage.getItem('dr_cycle_v1')) localStorage.setItem('dr_cycle_v1', String(data['dr_cycle_v1']));
       }
       // 重新载入内存（账单日是对象结构，需重新解析）
       periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
@@ -2267,7 +2322,7 @@ function importAllData(input) {
         cycleList = Array.isArray(cy) ? cy.filter(x => typeof x === 'string' && x) : [];
       } catch (e) { cycleList = []; }
       if (cycleStart && cycleList.indexOf(cycleStart) < 0) cycleList.push(cycleStart);
-      alert('导入成功，已覆盖本地数据');
+      alert('导入成功，已与本地数据合并共存');
       renderAll();
     } catch (e) {
       alert('导入失败：文件格式不正确');
