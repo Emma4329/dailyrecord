@@ -2300,7 +2300,158 @@ function init() {
   checkWeeklyPopup();
 }
 
+// ====== 云端同步（自托管后端）======
+const SYNC_KEYS_JSON = ['dr_period_v1','dr_weight_v1','dr_anniv_v1','dr_diet_v1','dr_bill_month_v1','dr_bill_year_v1','dr_cycles_v1'];
+const SYNC_KEYS_RAW  = ['dr_cycle_v1'];
+const SYNC_KEYS = SYNC_KEYS_JSON.concat(SYNC_KEYS_RAW);
+const LS_SYNC_SERVER = 'dr_sync_server';
+const LS_SYNC_TOKEN  = 'dr_sync_token';
+let _syncTimer = null, _syncDirty = false, _lastSavedAt = 0, _syncing = false, _applying = false;
+
+function syncServer(){ return (localStorage.getItem(LS_SYNC_SERVER) || '').trim(); }
+function syncToken(){ return (localStorage.getItem(LS_SYNC_TOKEN) || '').trim(); }
+
+function getAllState(){
+  const d = {};
+  SYNC_KEYS_JSON.forEach(function(k){ try { d[k] = JSON.parse(localStorage.getItem(k) || 'null'); } catch(e){ d[k] = null; } });
+  SYNC_KEYS_RAW.forEach(function(k){ d[k] = localStorage.getItem(k) || ''; });
+  return d;
+}
+function applyState(d){
+  if (!d || typeof d !== 'object') return;
+  _applying = true;
+  SYNC_KEYS_JSON.forEach(function(k){ if (d[k] !== undefined) localStorage.setItem(k, JSON.stringify(d[k])); });
+  SYNC_KEYS_RAW.forEach(function(k){ if (d[k] !== undefined) localStorage.setItem(k, d[k]); });
+  try { periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]'); } catch(e){}
+  try { weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]'); } catch(e){}
+  try { annivs  = JSON.parse(localStorage.getItem(KEY_ANNIV) || '[]'); } catch(e){}
+  try { dietHistory = JSON.parse(localStorage.getItem('dr_diet_v1') || '[]'); } catch(e){}
+  billMonth = loadBillMonth();
+  billYear  = loadBillYear();
+  try { cycleStart = localStorage.getItem(KEY_CYCLE) || ''; } catch(e){}
+  try { cycleList = JSON.parse(localStorage.getItem(KEY_CYCLES) || '[]'); } catch(e){ cycleList = []; }
+  _applying = false;
+  try { renderAll(); } catch(e){}
+}
+function scheduleSync(){
+  if (_applying) return;
+  if (!syncServer() || !syncToken()) return;
+  _syncDirty = true;
+  if (_syncTimer) clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(doSync, 1500);
+}
+async function doSync(){
+  const server = syncServer().replace(/\/+$/, '');
+  const token = syncToken();
+  if (!server || !token) return;
+  _syncing = true; syncStatus('同步中…');
+  try {
+    const payload = { data: getAllState(), savedAt: Date.now() };
+    const res = await fetch(server + '/api/data', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+      body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const r = await res.json();
+    _lastSavedAt = r.savedAt || Date.now();
+    _syncDirty = false;
+    syncStatus('已保存到云端 · ' + new Date(_lastSavedAt).toLocaleString());
+  } catch(e) {
+    syncStatus('同步失败：' + e.message);
+  } finally { _syncing = false; }
+}
+async function syncDown(){
+  const server = syncServer().replace(/\/+$/, '');
+  const token = syncToken();
+  if (!server || !token) return false;
+  try {
+    const res = await fetch(server + '/api/data', { headers: { 'Authorization': 'Bearer ' + token } });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const r = await res.json();
+    if (r && r.data && Object.keys(r.data).length) {
+      applyState(r.data);
+      _lastSavedAt = r.savedAt || 0;
+      syncStatus('已从云端载入 · ' + new Date(_lastSavedAt).toLocaleString());
+      return true;
+    }
+  } catch(e) { syncStatus('云端读取失败：' + e.message); }
+  return false;
+}
+async function pushIfEmpty(){
+  const server = syncServer().replace(/\/+$/, '');
+  const token = syncToken();
+  if (!server || !token) return;
+  const st = getAllState();
+  const has = SYNC_KEYS.some(function(k){
+    const v = st[k];
+    return v !== undefined && v !== null && v !== '' && !(v instanceof Array && v.length === 0);
+  });
+  if (has) await doSync();
+}
+// 监听所有对同步键的写入，自动触发上传（仅在已配置服务器时生效）
+(function(){
+  const _set = Storage.prototype.setItem;
+  Storage.prototype.setItem = function(k, v){
+    const r = _set.apply(this, arguments);
+    if (SYNC_KEYS.indexOf(k) >= 0) scheduleSync();
+    return r;
+  };
+})();
+// ===== 同步设置 UI =====
+function syncStatus(t){ const el = document.getElementById('syncStatus'); if (el) el.textContent = t; }
+function injectSyncUI(){
+  if (document.getElementById('syncBtn')) return;
+  const css = '#syncBtn{position:fixed;right:14px;bottom:14px;z-index:9999;background:#2b7de9;color:#fff;border:none;border-radius:24px;padding:10px 16px;font-size:14px;box-shadow:0 2px 10px rgba(0,0,0,.25);cursor:pointer}'
+    + '#syncPanel{position:fixed;right:14px;bottom:64px;z-index:9999;width:300px;background:#fff;border-radius:12px;box-shadow:0 6px 24px rgba(0,0,0,.25);padding:16px;display:none;font-size:13px;color:#222}'
+    + '#syncPanel h3{margin:0 0 10px;font-size:15px}#syncPanel label{display:block;margin:8px 0 4px}'
+    + '#syncPanel input{width:100%;box-sizing:border-box;padding:8px;border:1px solid #ccc;border-radius:6px;font-size:13px}'
+    + '#syncPanel .row{margin-top:10px;display:flex;gap:8px}#syncPanel button{flex:1;padding:8px;border:none;border-radius:6px;cursor:pointer;font-size:13px}'
+    + '#syncPanel .save{background:#2b7de9;color:#fff}#syncPanel .test{background:#eee;color:#333}'
+    + '#syncStatus{margin-top:10px;color:#666;min-height:16px;word-break:break-all}';
+  const st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+  const btn = document.createElement('button'); btn.id = 'syncBtn'; btn.textContent = '☁️ 同步';
+  btn.onclick = function(){ const p = document.getElementById('syncPanel'); p.style.display = (p.style.display === 'none' ? 'block' : 'none'); };
+  document.body.appendChild(btn);
+  const p = document.createElement('div'); p.id = 'syncPanel';
+  p.innerHTML = '<h3>云端同步设置</h3>'
+    + '<label>服务器地址（如 https://dr.你的域名）</label>'
+    + '<input id="syncServer" placeholder="https://dr.example.com">'
+    + '<label>令牌 Token</label>'
+    + '<input id="syncToken" placeholder="与后端 DR_TOKEN 一致" type="password">'
+    + '<div class="row"><button class="save" id="syncSave">保存</button><button class="test" id="syncTest">测试连接</button></div>'
+    + '<div id="syncStatus"></div>';
+  document.body.appendChild(p);
+  document.getElementById('syncServer').value = syncServer();
+  document.getElementById('syncToken').value = syncToken();
+  document.getElementById('syncSave').onclick = function(){
+    localStorage.setItem(LS_SYNC_SERVER, document.getElementById('syncServer').value.trim());
+    localStorage.setItem(LS_SYNC_TOKEN, document.getElementById('syncToken').value.trim());
+    syncStatus('已保存，正在从云端载入…');
+    initCloudSync(true);
+  };
+  document.getElementById('syncTest').onclick = async function(){
+    const server = syncServer().replace(/\/+$/, '');
+    const token = syncToken();
+    if (!server || !token) { syncStatus('请先填写服务器和令牌'); return; }
+    try {
+      const res = await fetch(server + '/api/health', { headers: { 'Authorization': 'Bearer ' + token } });
+      syncStatus(res.ok ? '连接成功 ✓' : '连接失败 HTTP ' + res.status);
+    } catch(e) { syncStatus('连接失败：' + e.message); }
+  };
+}
+async function initCloudSync(fromSettings){
+  injectSyncUI();
+  if (!syncServer() || !syncToken()) {
+    if (fromSettings) syncStatus('已保存，但未填服务器或令牌');
+    return;
+  }
+  const ok = await syncDown();
+  if (!ok) await pushIfEmpty();
+}
+
 init();
+initCloudSync();
 </script>
 </body>
 </html>
