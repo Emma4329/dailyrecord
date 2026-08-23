@@ -208,10 +208,7 @@
         <label>开始日期</label>
         <input type="date" id="periodStart" lang="zh-CN">
       </div>
-      <div class="form-row">
-        <label>备注（可选）</label>
-        <textarea id="periodNote" rows="2" placeholder="如痛经、情绪、症状等"></textarea>
-      </div>
+      <div class="hint" id="periodDaysLeft" style="margin-bottom:12px;"></div>
       <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">经期刚刚开始</button>
     </div>
 
@@ -219,17 +216,17 @@
     <div class="card">
       <div class="card-title"><span class="icon">📊</span>经期统计</div>
       <div class="stats">
-        <div class="stat-card pink">
-          <div class="label">平均周期</div>
-          <div class="value" id="periodAvgCycle">--<span class="unit">天</span></div>
+        <div class="stat-card success">
+          <div class="label">距下次</div>
+          <div class="value" id="periodDaysToNext">--<span class="unit">天</span></div>
         </div>
         <div class="stat-card warning">
           <div class="label">下次预测</div>
           <div class="value" id="periodNextPredict" style="font-size:14px;">--</div>
         </div>
-        <div class="stat-card success">
-          <div class="label">距下次</div>
-          <div class="value" id="periodDaysToNext">--<span class="unit">天</span></div>
+        <div class="stat-card pink">
+          <div class="label">平均周期</div>
+          <div class="value" id="periodAvgCycle">--<span class="unit">天</span></div>
         </div>
         <div class="stat-card success">
           <div class="label">排卵日预测</div>
@@ -262,7 +259,7 @@
       <div class="card-title"><span class="icon">📜</span>历史记录</div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>开始日期</th><th>备注</th><th></th></tr></thead>
+          <thead><tr><th>开始日期</th><th></th></tr></thead>
           <tbody id="periodTableBody"></tbody>
         </table>
       </div>
@@ -424,13 +421,11 @@ function switchPage(name) {
 // ====== 经期模块 ======
 function savePeriod() {
   const start = document.getElementById('periodStart').value;
-  const note = document.getElementById('periodNote').value.trim();
   if (!start) { alert('请选择开始日期'); return; }
-  periods.push({ start, end: null, flow: 'normal', note, ts: Date.now() });
+  periods.push({ start, end: null, flow: 'normal', note: '', ts: Date.now() });
   periods.sort((a,b) => a.start < b.start ? -1 : 1);
   savePeriods();
   document.getElementById('periodStart').value = '';
-  document.getElementById('periodNote').value = '';
   renderPeriod();
   alert('已保存');
 }
@@ -512,6 +507,17 @@ function renderPeriod() {
   const ovu = getOvulationPredict();
   document.getElementById('periodOvulation').textContent = ovu ? cnDate(ovu) : '--';
 
+  // 记录卡：还剩多少天
+  const daysLeftEl = document.getElementById('periodDaysLeft');
+  if (!next) {
+    daysLeftEl.innerHTML = '记录首次经期后开始计算周期与倒计时。';
+  } else {
+    const dl = daysBetween(todayStr(), next);
+    if (dl > 0) daysLeftEl.innerHTML = '距下次经期还有 <strong>' + dl + '</strong> 天';
+    else if (dl === 0) daysLeftEl.innerHTML = '⚠️ 预测经期就在今天，请留意身体变化。';
+    else daysLeftEl.innerHTML = '已超过预测经期 <strong>' + Math.abs(dl) + '</strong> 天，留意是否漏记。';
+  }
+
   // 日历
   renderCalendar();
 
@@ -526,7 +532,6 @@ function renderPeriod() {
     tbody.innerHTML = periods.slice().reverse().map(p => {
       return `<tr>
         <td>${cnDate(p.start)}</td>
-        <td style="font-size:11px;color:var(--text-light)">${p.note || ''}</td>
         <td><button class="btn btn-danger" onclick="deletePeriod(${p.ts})">删除</button></td>
       </tr>`;
     }).join('');
