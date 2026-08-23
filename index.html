@@ -135,7 +135,6 @@
     width: 26px; height: 26px; border-radius: 6px;
     font-size: 14px; flex-shrink: 0;
   }
-  .nav-icon.home { background: #7B4B9C; color: #FFF; }
   .nav-icon.period { background: #E84A8F; color: #FFF; }
   .nav-icon.weight { background: #3B7DD8; color: #FFF; }
   .nav-icon.anniv { background: #C77D0D; color: #FFF; }
@@ -181,16 +180,6 @@
   /* ====== 工具栏 ====== */
   .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 
-  /* ====== 每日打卡风格（个人首页用）===== */
-  .checkin-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-  .checkin-item {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 14px; border-radius: 10px; border: 2px solid var(--border);
-    cursor: pointer; transition: all 0.2s; user-select: none; font-size: 13px; font-weight: 600;
-    background: var(--card);
-  }
-  .checkin-item.done { border-color: var(--success); background: #E8F5E9; color: var(--success); }
-
   .hint { font-size: 11px; color: var(--text-light); margin-top: 8px; line-height: 1.6; }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
 
@@ -198,9 +187,6 @@
     display: inline-block; padding: 2px 8px; border-radius: 10px;
     font-size: 10px; font-weight: 600;
   }
-  .pill.flow-heavy { background: #C0392B; color: white; }
-  .pill.flow-normal { background: #E84A8F; color: white; }
-  .pill.flow-light { background: #F8B8D0; color: #C73A7F; }
 </style>
 </head>
 <body>
@@ -214,75 +200,19 @@
 <!-- ====== 主区域 ====== -->
 <div class="main">
 
-  <!-- ========== 首页 ========== -->
-  <div class="page active" id="page-home">
-    <!-- 今日概览 -->
-    <div class="card">
-      <div class="card-title"><span class="icon">📋</span>今日概览</div>
-      <div class="stats">
-        <div class="stat-card pink">
-          <div class="label">经期状态</div>
-          <div class="value" id="homePeriodStatus" style="font-size:15px;">--</div>
-        </div>
-        <div class="stat-card info">
-          <div class="label">最近体重</div>
-          <div class="value" id="homeWeight">--<span class="unit">kg</span></div>
-        </div>
-        <div class="stat-card warning">
-          <div class="label">近期纪念日</div>
-          <div class="value" id="homeAnniv" style="font-size:15px;">--</div>
-        </div>
-        <div class="stat-card success">
-          <div class="label">经期周期</div>
-          <div class="value" id="homeCycle">--<span class="unit">天</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 经期提醒 -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🌸</span>经期提醒</div>
-      <div id="homePeriodHint" class="hint">暂无经期记录，去经期页面记录首次经期开始计算周期。</div>
-    </div>
-
-    <!-- 体重趋势 -->
-    <div class="card">
-      <div class="card-title"><span class="icon">⚖️</span>体重趋势（近7次）</div>
-      <div class="weight-chart" id="homeWeightChart"></div>
-    </div>
-
-    <!-- 近期纪念日 -->
-    <div class="card">
-      <div class="card-title"><span class="icon">🎉</span>近期纪念日</div>
-      <div id="homeAnnivList"></div>
-    </div>
-  </div>
-
   <!-- ========== 经期记录 ========== -->
-  <div class="page" id="page-period">
+  <div class="page active" id="page-period">
     <div class="card">
       <div class="card-title"><span class="icon">🌸</span>记录经期</div>
       <div class="form-row">
         <label>开始日期</label>
-        <input type="date" id="periodStart">
-      </div>
-      <div class="form-row">
-        <label>结束日期（可选，留空表示仍在进行）</label>
-        <input type="date" id="periodEnd">
-      </div>
-      <div class="form-row">
-        <label>经量</label>
-        <select id="periodFlow">
-          <option value="light">少量</option>
-          <option value="normal" selected>正常</option>
-          <option value="heavy">量大</option>
-        </select>
+        <input type="date" id="periodStart" lang="zh-CN">
       </div>
       <div class="form-row">
         <label>备注（可选）</label>
         <textarea id="periodNote" rows="2" placeholder="如痛经、情绪、症状等"></textarea>
       </div>
-      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">保存记录</button>
+      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">经期刚刚开始</button>
     </div>
 
     <!-- 经期统计 -->
@@ -292,10 +222,6 @@
         <div class="stat-card pink">
           <div class="label">平均周期</div>
           <div class="value" id="periodAvgCycle">--<span class="unit">天</span></div>
-        </div>
-        <div class="stat-card info">
-          <div class="label">平均经期</div>
-          <div class="value" id="periodAvgDuration">--<span class="unit">天</span></div>
         </div>
         <div class="stat-card warning">
           <div class="label">下次预测</div>
@@ -308,10 +234,6 @@
         <div class="stat-card success">
           <div class="label">排卵日预测</div>
           <div class="value" id="periodOvulation" style="font-size:14px;">--</div>
-        </div>
-        <div class="stat-card success">
-          <div class="label">距排卵</div>
-          <div class="value" id="periodDaysToOvulation">--<span class="unit">天</span></div>
         </div>
       </div>
     </div>
@@ -340,7 +262,7 @@
       <div class="card-title"><span class="icon">📜</span>历史记录</div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>开始</th><th>结束</th><th>天数</th><th>经量</th><th>备注</th><th></th></tr></thead>
+          <thead><tr><th>开始日期</th><th>备注</th><th></th></tr></thead>
           <tbody id="periodTableBody"></tbody>
         </table>
       </div>
@@ -354,7 +276,7 @@
       <div class="card-title"><span class="icon">⚖️</span>记录体重</div>
       <div class="form-row">
         <label>日期</label>
-        <input type="date" id="weightDate">
+        <input type="date" id="weightDate" lang="zh-CN">
       </div>
       <div class="form-row">
         <label>体重</label>
@@ -419,7 +341,7 @@
       </div>
       <div class="form-row">
         <label>日期</label>
-        <input type="date" id="annivDate">
+        <input type="date" id="annivDate" lang="zh-CN">
       </div>
       <div class="form-row">
         <label>类型</label>
@@ -444,10 +366,7 @@
 
 <!-- ====== 底部导航 ====== -->
 <div class="sidebar">
-  <div class="nav-item active" data-page="home" onclick="switchPage('home')">
-    <span class="nav-icon home">🏠</span><span>首页</span>
-  </div>
-  <div class="nav-item" data-page="period" onclick="switchPage('period')">
+  <div class="nav-item active" data-page="period" onclick="switchPage('period')">
     <span class="nav-icon period">🌸</span><span>经期</span>
   </div>
   <div class="nav-item" data-page="weight" onclick="switchPage('weight')">
@@ -499,23 +418,18 @@ function switchPage(name) {
   if (name === 'period') { renderPeriod(); }
   if (name === 'weight') { renderWeight(); }
   if (name === 'anniv')  { renderAnniv(); }
-  if (name === 'home')   { renderHome(); }
   window.scrollTo(0, 0);
 }
 
 // ====== 经期模块 ======
 function savePeriod() {
   const start = document.getElementById('periodStart').value;
-  const end = document.getElementById('periodEnd').value;
-  const flow = document.getElementById('periodFlow').value;
   const note = document.getElementById('periodNote').value.trim();
   if (!start) { alert('请选择开始日期'); return; }
-  if (end && end < start) { alert('结束日期不能早于开始日期'); return; }
-  periods.push({ start, end, flow, note, ts: Date.now() });
+  periods.push({ start, end: null, flow: 'normal', note, ts: Date.now() });
   periods.sort((a,b) => a.start < b.start ? -1 : 1);
   savePeriods();
   document.getElementById('periodStart').value = '';
-  document.getElementById('periodEnd').value = '';
   document.getElementById('periodNote').value = '';
   renderPeriod();
   alert('已保存');
@@ -582,26 +496,11 @@ function getFertileDays() {
   return set;
 }
 
-// 今天是否在易孕窗口内
-function isFertileToday() {
-  return getFertileDays().has(todayStr());
-}
-
-function isOnPeriodToday() {
-  const today = todayStr();
-  for (const p of periods) {
-    if (p.start <= today && (!p.end || today <= p.end)) return true;
-  }
-  return false;
-}
-
 function renderPeriod() {
   // 统计
   const avgCycle = getAvgCycle();
-  const avgDur = getAvgDuration();
   const next = getNextPeriodPredict();
   document.getElementById('periodAvgCycle').innerHTML = (avgCycle || '--') + '<span class="unit">天</span>';
-  document.getElementById('periodAvgDuration').innerHTML = (avgDur || '--') + '<span class="unit">天</span>';
   document.getElementById('periodNextPredict').textContent = next ? cnDate(next) : '--';
   if (next) {
     document.getElementById('periodDaysToNext').innerHTML = daysBetween(todayStr(), next) + '<span class="unit">天</span>';
@@ -612,16 +511,6 @@ function renderPeriod() {
   // 排卵日
   const ovu = getOvulationPredict();
   document.getElementById('periodOvulation').textContent = ovu ? cnDate(ovu) : '--';
-  if (ovu) {
-    const dOvu = daysBetween(todayStr(), ovu);
-    if (dOvu >= 0) {
-      document.getElementById('periodDaysToOvulation').innerHTML = dOvu + '<span class="unit">天</span>';
-    } else {
-      document.getElementById('periodDaysToOvulation').innerHTML = '<span style="color:var(--text-light)">已过</span>';
-    }
-  } else {
-    document.getElementById('periodDaysToOvulation').textContent = '--';
-  }
 
   // 日历
   renderCalendar();
@@ -635,14 +524,8 @@ function renderPeriod() {
   } else {
     empty.style.display = 'none';
     tbody.innerHTML = periods.slice().reverse().map(p => {
-      const dur = getPeriodDuration(p);
-      const flowText = { light: '少量', normal: '正常', heavy: '量大' }[p.flow] || '正常';
-      const flowClass = `flow-${p.flow || 'normal'}`;
       return `<tr>
         <td>${cnDate(p.start)}</td>
-        <td>${p.end ? cnDate(p.end) : '<span style="color:var(--text-light)">进行中</span>'}</td>
-        <td>${dur !== null ? dur + '天' : '--'}</td>
-        <td><span class="pill ${flowClass}">${flowText}</span></td>
         <td style="font-size:11px;color:var(--text-light)">${p.note || ''}</td>
         <td><button class="btn btn-danger" onclick="deletePeriod(${p.ts})">删除</button></td>
       </tr>`;
@@ -796,7 +679,6 @@ function renderWeight() {
 
   // 图表
   renderWeightChart('weightChart', weights.slice(-30));
-  renderWeightChart('homeWeightChart', weights.slice(-7));
 
   // 历史表
   const tbody = document.getElementById('weightTableBody');
@@ -976,108 +858,6 @@ function renderAnniv() {
   }).join('');
 }
 
-// ====== 首页 ======
-function renderHome() {
-  // 经期状态
-  if (isOnPeriodToday()) {
-    document.getElementById('homePeriodStatus').innerHTML = '<span style="color:var(--pink)">经期中</span>';
-  } else {
-    const next = getNextPeriodPredict();
-    if (next) {
-      const d = daysBetween(todayStr(), next);
-      const ovu = getOvulationPredict();
-      if (todayStr() === ovu) {
-        document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--success)">排卵日</span>`;
-      } else if (isFertileToday()) {
-        document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--success)">易孕期</span>`;
-      } else if (d <= 3) {
-        document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--warning)">即将来潮</span>`;
-      } else {
-        document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--text-light)">第${28 - (28 - d)}天</span>`;
-      }
-    } else {
-      document.getElementById('homePeriodStatus').textContent = '未记录';
-    }
-  }
-
-  // 经期提示
-  const hint = document.getElementById('homePeriodHint');
-  if (periods.length === 0) {
-    hint.textContent = '暂无经期记录，去经期页面记录首次经期开始计算周期。';
-  } else if (isOnPeriodToday()) {
-    hint.innerHTML = '🌸 <strong>经期中</strong>，注意保暖、休息，少食生冷。';
-  } else if (isFertileToday()) {
-    const ovu = getOvulationPredict();
-    if (ovu === todayStr()) {
-      hint.innerHTML = '🌱 <strong>今日为预测排卵日</strong>，受孕几率最高。';
-    } else {
-      hint.innerHTML = `🌱 当前处于<strong>易孕期</strong>（排卵日 ${cnDate(ovu)}）。`;
-    }
-  } else {
-    const next = getNextPeriodPredict();
-    const d = daysBetween(todayStr(), next);
-    if (d <= 0) {
-      hint.innerHTML = '🌸 预测经期已到，留意身体变化。';
-    } else if (d <= 3) {
-      hint.innerHTML = `🌸 预测 <strong>${d}</strong> 天后来潮，提前准备。`;
-    } else if (d <= 7) {
-      hint.innerHTML = `🌸 距下次预测经期约 <strong>${d}</strong> 天。`;
-    } else {
-      hint.innerHTML = `🌸 距下次预测经期约 <strong>${d}</strong> 天，周期正常。`;
-    }
-  }
-
-  // 经期周期
-  const avgCycle = getAvgCycle();
-  document.getElementById('homeCycle').innerHTML = (avgCycle || '--') + '<span class="unit">天</span>';
-
-  // 最近体重
-  if (weights.length > 0) {
-    document.getElementById('homeWeight').innerHTML = weights[weights.length-1].val.toFixed(1) + '<span class="unit">kg</span>';
-  } else {
-    document.getElementById('homeWeight').textContent = '--';
-  }
-
-  // 近期纪念日
-  if (annivs.length > 0) {
-    const sorted = annivs.map(a => ({ a, info: getAnnivInfo(a) })).sort((x, y) => {
-      if (x.info.past && !y.info.past) return 1;
-      if (!x.info.past && y.info.past) return -1;
-      return x.info.days - y.info.days;
-    });
-    const next = sorted[0];
-    document.getElementById('homeAnniv').innerHTML = next.a.name + '<br><span style="font-size:11px;color:var(--text-light)">' + next.info.days + next.info.label + '</span>';
-  } else {
-    document.getElementById('homeAnniv').textContent = '未记录';
-  }
-
-  // 首页体重图
-  renderWeightChart('homeWeightChart', weights.slice(-7));
-
-  // 首页纪念日列表
-  const annivList = document.getElementById('homeAnnivList');
-  if (annivs.length === 0) {
-    annivList.innerHTML = '<div class="empty-tip">暂无纪念日</div>';
-  } else {
-    const sorted = annivs.map(a => ({ a, info: getAnnivInfo(a) })).sort((x, y) => {
-      if (x.info.past && !y.info.past) return 1;
-      if (!x.info.past && y.info.past) return -1;
-      return x.info.days - y.info.days;
-    }).slice(0, 3);
-    annivList.innerHTML = sorted.map(({ a, info }) => {
-      return `<div class="anniv-item" style="padding:8px 0;">
-        <div class="anniv-info">
-          <div class="anniv-name">${a.name}</div>
-          <div class="anniv-date">${cnDate(a.date)}</div>
-        </div>
-        <div class="anniv-countdown">
-          <div class="anniv-days ${info.past ? 'past' : ''}" style="font-size:18px;">${info.days}</div>
-          <div class="anniv-label">${info.label}</div>
-        </div>
-      </div>`;
-    }).join('');
-  }
-}
 
 // ====== 初始化 ======
 function init() {
@@ -1091,7 +871,7 @@ function init() {
   document.getElementById('periodStart').value = todayStr();
   document.getElementById('annivDate').value = todayStr();
 
-  renderHome();
+  renderPeriod();
 }
 
 init();
