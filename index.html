@@ -270,12 +270,12 @@
         <input type="date" id="weightDate" lang="zh-CN">
       </div>
       <div class="form-row">
-        <label>体重</label>
+        <label>体重（kg）</label>
         <input type="number" id="weightVal" step="0.1" placeholder="如 55.5">
       </div>
       <div class="form-row">
-        <label>备注（可选）</label>
-        <input type="text" id="weightNote" placeholder="如饭后、空腹">
+        <label>饮食（可选）</label>
+        <input type="text" id="weightNote" placeholder="如早餐鸡蛋牛奶、午餐沙拉">
       </div>
       <button class="btn btn-primary" onclick="saveWeight()" style="width:100%;">保存记录</button>
     </div>
@@ -289,12 +289,12 @@
           <div class="value" id="weightLatest">--<span class="unit">kg</span></div>
         </div>
         <div class="stat-card success">
-          <div class="label">7日均值</div>
-          <div class="value" id="weightAvg7">--<span class="unit">kg</span></div>
+          <div class="label">7日总减重</div>
+          <div class="value" id="weightAvg7">--<span class="unit">斤</span></div>
         </div>
         <div class="stat-card warning">
-          <div class="label">30日均值</div>
-          <div class="value" id="weightAvg30">--<span class="unit">kg</span></div>
+          <div class="label">30日总减重</div>
+          <div class="value" id="weightAvg30">--<span class="unit">斤</span></div>
         </div>
         <div class="stat-card pink">
           <div class="label">变化趋势</div>
@@ -314,7 +314,7 @@
       <div class="card-title"><span class="icon">📜</span>历史记录</div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>日期</th><th>体重</th><th>变化</th><th>备注</th><th></th></tr></thead>
+          <thead><tr><th>日期</th><th>体重</th><th>变化</th><th>饮食</th><th></th></tr></thead>
           <tbody id="weightTableBody"></tbody>
         </table>
       </div>
@@ -633,6 +633,16 @@ function deleteWeight(ts) {
   renderWeight();
 }
 
+// 区间总变化（斤）：末-初，负=减重；1kg=2斤
+function totalChangeJin(list) {
+  if (list.length < 2) return '--';
+  const sorted = list.slice().sort((a, b) => a.date < b.date ? -1 : 1);
+  const jin = (sorted[sorted.length - 1].val - sorted[0].val) * 2;
+  if (Math.abs(jin) < 0.05) return '持平';
+  if (jin < 0) return `<span style="color:var(--success)">减重 ${Math.abs(jin).toFixed(1)}</span><span class="unit">斤</span>`;
+  return `<span style="color:var(--danger)">增重 ${jin.toFixed(1)}</span><span class="unit">斤</span>`;
+}
+
 function renderWeight() {
   // 统计
   if (weights.length === 0) {
@@ -651,8 +661,9 @@ function renderWeight() {
     const last7 = weights.filter(w => parseDate(w.date) >= sevenAgo);
     const last30 = weights.filter(w => parseDate(w.date) >= thirtyAgo);
 
-    document.getElementById('weightAvg7').innerHTML = (last7.length ? (last7.reduce((a,b)=>a+b.val,0)/last7.length).toFixed(1) : '--') + '<span class="unit">kg</span>';
-    document.getElementById('weightAvg30').innerHTML = (last30.length ? (last30.reduce((a,b)=>a+b.val,0)/last30.length).toFixed(1) : '--') + '<span class="unit">kg</span>';
+    // 7日/30日总变化（斤）：区间末-初，1kg=2斤
+    document.getElementById('weightAvg7').innerHTML = totalChangeJin(last7);
+    document.getElementById('weightAvg30').innerHTML = totalChangeJin(last30);
 
     // 趋势：最近 vs 前一次
     if (weights.length >= 2) {
