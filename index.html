@@ -187,6 +187,18 @@
     font-size: 14px; font-weight: 700; margin-bottom: 12px;
   }
   .days-left strong { font-size: 18px; color: var(--primary); margin: 0 2px; }
+  .diet-suggest {
+    position: absolute; left: 0; right: 0; top: 100%; z-index: 60;
+    background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: var(--shadow); max-height: 210px; overflow-y: auto; margin-top: 4px;
+  }
+  .diet-suggest .diet-opt {
+    padding: 11px 12px; font-size: 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+  }
+  .diet-suggest .diet-opt:last-child { border-bottom: none; }
+  .diet-suggest .diet-opt:hover { background: var(--bg); }
+  #page-weight thead th, #weightTableBody td { white-space: nowrap; }
+  #page-weight thead th:nth-child(4), #weightTableBody td:nth-child(4) { white-space: normal; min-width: 88px; }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
 
   .pill {
@@ -273,9 +285,10 @@
         <label>体重（kg）</label>
         <input type="number" id="weightVal" step="0.1" placeholder="如 55.5">
       </div>
-      <div class="form-row">
+      <div class="form-row" style="position:relative;">
         <label>饮食（可选）</label>
-        <input type="text" id="weightNote" placeholder="如早餐鸡蛋牛奶、午餐沙拉">
+        <input type="text" id="weightNote" placeholder="如早餐鸡蛋牛奶、午餐沙拉" autocomplete="off">
+        <div id="dietSuggest" class="diet-suggest" style="display:none;"></div>
       </div>
       <button class="btn btn-primary" onclick="saveWeight()" style="width:100%;">保存记录</button>
     </div>
@@ -319,6 +332,18 @@
         </table>
       </div>
       <div id="weightEmpty" class="empty-tip">暂无体重记录</div>
+    </div>
+
+    <!-- 饮食掉秤榜 -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🏆</span>饮食掉秤榜</div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>掉秤幅度</th><th>日期</th><th>食物</th></tr></thead>
+          <tbody id="dietBoardBody"></tbody>
+        </table>
+      </div>
+      <div id="dietBoardEmpty" class="empty-tip">暂无掉秤记录</div>
     </div>
   </div>
 
@@ -377,6 +402,7 @@ const KEY_ANNIV  = 'dr_anniv_v1';
 let periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
 let weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
 let annivs  = JSON.parse(localStorage.getItem(KEY_ANNIV)  || '[]');
+let dietHistory = JSON.parse(localStorage.getItem('dr_diet_v1') || '[]');
 
 function savePeriods() { localStorage.setItem(KEY_PERIOD, JSON.stringify(periods)); }
 function saveWeights() { localStorage.setItem(KEY_WEIGHT, JSON.stringify(weights)); }
@@ -695,12 +721,12 @@ function renderWeight() {
         const diff = w.val - prev.val;
         const sign = diff > 0 ? '+' : '';
         const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
-        change = `<span style="color:${color}">${sign}${diff.toFixed(1)}</span>`;
+        change = `<span style="color:${color}">${sign}${diff.toFixed(1)}kg</span>`;
       } else {
         change = '--';
       }
       return `<tr>
-        <td>${cnDate(w.date)}</td>
+        <td>${mdyDate(w.date)}</td>
         <td><strong>${w.val.toFixed(1)}</strong> kg</td>
         <td>${change}</td>
         <td style="font-size:11px;color:var(--text-light)">${w.note || ''}</td>
@@ -708,6 +734,10 @@ function renderWeight() {
       </tr>`;
     }).join('');
   }
+
+  // 饮食记忆 + 掉秤榜
+  refreshDietHistory();
+  renderDietLossBoard();
 }
 
 function renderWeightChart(id, data) {
@@ -774,6 +804,66 @@ function renderWeightChart(id, data) {
     ${dots}
     ${xLabels}
   </svg>`;
+}
+
+
+// ====== 饮食辅助 ======
+function mdyDate(s) {
+  const d = parseDate(s);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${mm}-${dd}-${d.getFullYear()}`;
+}
+
+function refreshDietHistory() {
+  const set = new Set();
+  weights.forEach(w => { if (w.note && w.note.trim()) set.add(w.note.trim()); });
+  dietHistory = Array.from(set);
+  try { localStorage.setItem('dr_diet_v1', JSON.stringify(dietHistory)); } catch (e) {}
+}
+
+function renderDietLossBoard() {
+  const tbody = document.getElementById('dietBoardBody');
+  const empty = document.getElementById('dietBoardEmpty');
+  const sorted = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
+  const events = [];
+  for (let i = 1; i < sorted.length; i++) {
+    const loss = sorted[i-1].val - sorted[i].val; // 较前一天轻了 = 掉秤(正)
+    if (loss > 0) {
+      events.push({ lossJin: loss * 2, date: sorted[i].date, food: sorted[i].note || '—' });
+    }
+  }
+  events.sort((a, b) => b.lossJin - a.lossJin);
+  if (events.length === 0) {
+    tbody.innerHTML = ''; empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = events.map(e => `<tr>
+      <td style="color:var(--success);font-weight:700;white-space:nowrap;">掉秤 ${e.lossJin.toFixed(1)} 斤</td>
+      <td style="white-space:nowrap;">${mdyDate(e.date)}</td>
+      <td style="white-space:normal;min-width:88px;">${e.food}</td>
+    </tr>`).join('');
+  }
+}
+
+function initDietAutocomplete() {
+  const noteInput = document.getElementById('weightNote');
+  const box = document.getElementById('dietSuggest');
+  noteInput.addEventListener('input', () => {
+    const v = noteInput.value.trim();
+    const matches = dietHistory.filter(x => x !== v && x.includes(v)).slice(0, 8);
+    if (!v || matches.length === 0) { box.style.display = 'none'; return; }
+    box.innerHTML = '';
+    matches.forEach(m => {
+      const opt = document.createElement('div');
+      opt.className = 'diet-opt';
+      opt.textContent = m;
+      opt.addEventListener('click', () => { noteInput.value = m; box.style.display = 'none'; noteInput.focus(); });
+      box.appendChild(opt);
+    });
+    box.style.display = 'block';
+  });
+  noteInput.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
 }
 
 // ====== 纪念日模块 ======
@@ -868,6 +958,7 @@ function init() {
   // 默认日期填入今天
   document.getElementById('weightDate').value = todayStr();
   document.getElementById('annivDate').value = todayStr();
+  initDietAutocomplete();
 
   renderPeriod();
 }
