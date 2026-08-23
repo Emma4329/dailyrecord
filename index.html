@@ -155,6 +155,8 @@
   }
   .period-cal .day.period { background: var(--pink); color: white; font-weight: 700; }
   .period-cal .day.predicted { background: var(--pink-light); color: var(--pink); }
+  .period-cal .day.fertile { background: #D8F0DC; color: #2D7D46; }
+  .period-cal .day.ovulation { background: var(--success); color: white; font-weight: 700; }
   .period-cal .day.today { box-shadow: 0 0 0 2px var(--primary); }
   .period-cal .day.other-month { opacity: 0.3; }
 
@@ -303,6 +305,14 @@
           <div class="label">距下次</div>
           <div class="value" id="periodDaysToNext">--<span class="unit">天</span></div>
         </div>
+        <div class="stat-card success">
+          <div class="label">排卵日预测</div>
+          <div class="value" id="periodOvulation" style="font-size:14px;">--</div>
+        </div>
+        <div class="stat-card success">
+          <div class="label">距排卵</div>
+          <div class="value" id="periodDaysToOvulation">--<span class="unit">天</span></div>
+        </div>
       </div>
     </div>
 
@@ -319,7 +329,9 @@
       <div class="period-cal" id="periodCal"></div>
       <div class="hint">
         <span style="display:inline-block;width:10px;height:10px;background:var(--pink);border-radius:50%;vertical-align:middle;"></span> 实际经期
-        <span style="display:inline-block;width:10px;height:10px;background:var(--pink-light);border-radius:50%;vertical-align:middle;margin-left:10px;"></span> 预测经期
+        <span style="display:inline-block;width:10px;height:10px;background:var(--pink-light);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 预测经期
+        <span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 排卵日
+        <span style="display:inline-block;width:10px;height:10px;background:#D8F0DC;border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 易孕期
       </div>
     </div>
 
@@ -547,6 +559,34 @@ function getNextPeriodPredict() {
   return fmtDate(d);
 }
 
+// 排卵日预测：下次经期预测日往前推14天（黄体期固定14天）
+function getOvulationPredict() {
+  const next = getNextPeriodPredict();
+  if (!next) return null;
+  const d = parseDate(next);
+  d.setDate(d.getDate() - 14);
+  return fmtDate(d);
+}
+
+// 易孕窗口：排卵日前5天 ~ 后1天
+function getFertileDays() {
+  const ovu = getOvulationPredict();
+  const set = new Set();
+  if (!ovu) return set;
+  const od = parseDate(ovu);
+  for (let i = -5; i <= 1; i++) {
+    const d = new Date(od);
+    d.setDate(d.getDate() + i);
+    set.add(fmtDate(d));
+  }
+  return set;
+}
+
+// 今天是否在易孕窗口内
+function isFertileToday() {
+  return getFertileDays().has(todayStr());
+}
+
 function isOnPeriodToday() {
   const today = todayStr();
   for (const p of periods) {
@@ -567,6 +607,20 @@ function renderPeriod() {
     document.getElementById('periodDaysToNext').innerHTML = daysBetween(todayStr(), next) + '<span class="unit">天</span>';
   } else {
     document.getElementById('periodDaysToNext').textContent = '--';
+  }
+
+  // 排卵日
+  const ovu = getOvulationPredict();
+  document.getElementById('periodOvulation').textContent = ovu ? cnDate(ovu) : '--';
+  if (ovu) {
+    const dOvu = daysBetween(todayStr(), ovu);
+    if (dOvu >= 0) {
+      document.getElementById('periodDaysToOvulation').innerHTML = dOvu + '<span class="unit">天</span>';
+    } else {
+      document.getElementById('periodDaysToOvulation').innerHTML = '<span style="color:var(--text-light)">已过</span>';
+    }
+  } else {
+    document.getElementById('periodDaysToOvulation').textContent = '--';
   }
 
   // 日历
@@ -650,6 +704,10 @@ function renderCalendar() {
     }
   }
 
+  // 排卵日 + 易孕窗口
+  const ovuDay = getOvulationPredict();
+  const fertileDays = getFertileDays();
+
   let html = '';
   for (let i = 0; i < 7; i++) html += `<div class="dow">${labels[i]}</div>`;
 
@@ -661,6 +719,8 @@ function renderCalendar() {
     let cls = 'day';
     if (periodDays.has(ds)) cls += ' period';
     else if (predictedDays.has(ds)) cls += ' predicted';
+    else if (ds === ovuDay) cls += ' ovulation';
+    else if (fertileDays.has(ds)) cls += ' fertile';
     if (ds === today) cls += ' today';
     html += `<div class="${cls}">${d}</div>`;
   }
@@ -925,7 +985,12 @@ function renderHome() {
     const next = getNextPeriodPredict();
     if (next) {
       const d = daysBetween(todayStr(), next);
-      if (d <= 3) {
+      const ovu = getOvulationPredict();
+      if (todayStr() === ovu) {
+        document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--success)">排卵日</span>`;
+      } else if (isFertileToday()) {
+        document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--success)">易孕期</span>`;
+      } else if (d <= 3) {
         document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--warning)">即将来潮</span>`;
       } else {
         document.getElementById('homePeriodStatus').innerHTML = `<span style="color:var(--text-light)">第${28 - (28 - d)}天</span>`;
@@ -941,6 +1006,13 @@ function renderHome() {
     hint.textContent = '暂无经期记录，去经期页面记录首次经期开始计算周期。';
   } else if (isOnPeriodToday()) {
     hint.innerHTML = '🌸 <strong>经期中</strong>，注意保暖、休息，少食生冷。';
+  } else if (isFertileToday()) {
+    const ovu = getOvulationPredict();
+    if (ovu === todayStr()) {
+      hint.innerHTML = '🌱 <strong>今日为预测排卵日</strong>，受孕几率最高。';
+    } else {
+      hint.innerHTML = `🌱 当前处于<strong>易孕期</strong>（排卵日 ${cnDate(ovu)}）。`;
+    }
   } else {
     const next = getNextPeriodPredict();
     const d = daysBetween(todayStr(), next);
