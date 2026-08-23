@@ -181,6 +181,12 @@
   .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
 
   .hint { font-size: 11px; color: var(--text-light); margin-top: 8px; line-height: 1.6; }
+  .days-left {
+    background: #E8F3FB; color: var(--primary-dark);
+    padding: 14px 12px; border-radius: 10px; text-align: center;
+    font-size: 14px; font-weight: 700; margin-bottom: 12px;
+  }
+  .days-left strong { font-size: 18px; color: var(--primary); margin: 0 2px; }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
 
   .pill {
@@ -204,11 +210,7 @@
   <div class="page active" id="page-period">
     <div class="card">
       <div class="card-title"><span class="icon">🌸</span>记录经期</div>
-      <div class="form-row">
-        <label>开始日期</label>
-        <input type="date" id="periodStart" lang="zh-CN">
-      </div>
-      <div class="hint" id="periodDaysLeft" style="margin-bottom:12px;"></div>
+      <div class="days-left" id="periodDaysLeft"></div>
       <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">经期刚刚开始</button>
     </div>
 
@@ -216,10 +218,6 @@
     <div class="card">
       <div class="card-title"><span class="icon">📊</span>经期统计</div>
       <div class="stats">
-        <div class="stat-card success">
-          <div class="label">距下次</div>
-          <div class="value" id="periodDaysToNext">--<span class="unit">天</span></div>
-        </div>
         <div class="stat-card warning">
           <div class="label">下次预测</div>
           <div class="value" id="periodNextPredict" style="font-size:14px;">--</div>
@@ -227,10 +225,6 @@
         <div class="stat-card pink">
           <div class="label">平均周期</div>
           <div class="value" id="periodAvgCycle">--<span class="unit">天</span></div>
-        </div>
-        <div class="stat-card success">
-          <div class="label">排卵日预测</div>
-          <div class="value" id="periodOvulation" style="font-size:14px;">--</div>
         </div>
       </div>
     </div>
@@ -420,14 +414,12 @@ function switchPage(name) {
 
 // ====== 经期模块 ======
 function savePeriod() {
-  const start = document.getElementById('periodStart').value;
-  if (!start) { alert('请选择开始日期'); return; }
+  const start = todayStr();
   periods.push({ start, end: null, flow: 'normal', note: '', ts: Date.now() });
   periods.sort((a,b) => a.start < b.start ? -1 : 1);
   savePeriods();
-  document.getElementById('periodStart').value = '';
   renderPeriod();
-  alert('已保存');
+  alert('已保存，记录日期：' + cnDate(start));
 }
 
 function deletePeriod(ts) {
@@ -497,15 +489,6 @@ function renderPeriod() {
   const next = getNextPeriodPredict();
   document.getElementById('periodAvgCycle').innerHTML = (avgCycle || '--') + '<span class="unit">天</span>';
   document.getElementById('periodNextPredict').textContent = next ? cnDate(next) : '--';
-  if (next) {
-    document.getElementById('periodDaysToNext').innerHTML = daysBetween(todayStr(), next) + '<span class="unit">天</span>';
-  } else {
-    document.getElementById('periodDaysToNext').textContent = '--';
-  }
-
-  // 排卵日
-  const ovu = getOvulationPredict();
-  document.getElementById('periodOvulation').textContent = ovu ? cnDate(ovu) : '--';
 
   // 记录卡：还剩多少天
   const daysLeftEl = document.getElementById('periodDaysLeft');
@@ -873,7 +856,6 @@ function init() {
 
   // 默认日期填入今天
   document.getElementById('weightDate').value = todayStr();
-  document.getElementById('periodStart').value = todayStr();
   document.getElementById('annivDate').value = todayStr();
 
   renderPeriod();
