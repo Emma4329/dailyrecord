@@ -198,7 +198,10 @@
   .diet-suggest .diet-opt:last-child { border-bottom: none; }
   .diet-suggest .diet-opt:hover { background: var(--bg); }
   #page-weight thead th, #weightTableBody td { white-space: nowrap; }
-  #page-weight thead th:nth-child(4), #weightTableBody td:nth-child(4) { white-space: normal; min-width: 88px; }
+  #weightTableBody td:nth-child(1), #page-weight thead th:nth-child(1) { white-space: normal; width: 62px; vertical-align: top; text-align: left; }
+  #weightTableBody td:nth-child(4), #page-weight thead th:nth-child(4) { white-space: normal; min-width: 120px; }
+  .yr { font-size: 10px; color: var(--text-light); }
+  .next-predict { font-size: 13px; color: var(--text-light); text-align: center; margin-bottom: 12px; }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
 
   .pill {
@@ -211,7 +214,7 @@
 
 <!-- ====== 顶部标题栏 ====== -->
 <div class="top-bar">
-  <h1>HP记录台</h1>
+  <h1 id="topTitle">经期</h1>
   <span class="date" id="topDate"></span>
 </div>
 
@@ -223,22 +226,8 @@
     <div class="card">
       <div class="card-title"><span class="icon">🌸</span>记录经期</div>
       <div class="days-left" id="periodDaysLeft"></div>
+      <div class="next-predict" id="periodNextLine"></div>
       <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">经期刚刚开始</button>
-    </div>
-
-    <!-- 经期统计 -->
-    <div class="card">
-      <div class="card-title"><span class="icon">📊</span>经期统计</div>
-      <div class="stats">
-        <div class="stat-card warning">
-          <div class="label">下次预测</div>
-          <div class="value" id="periodNextPredict" style="font-size:14px;">--</div>
-        </div>
-        <div class="stat-card pink">
-          <div class="label">平均周期</div>
-          <div class="value" id="periodAvgCycle">--<span class="unit">天</span></div>
-        </div>
-      </div>
     </div>
 
     <!-- 经期日历 -->
@@ -262,10 +251,13 @@
 
     <!-- 历史记录 -->
     <div class="card">
-      <div class="card-title"><span class="icon">📜</span>历史记录</div>
+      <div class="card-title">
+        <span class="icon">📜</span>历史记录
+        <span id="periodAvgCycleInline" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--text-light);"></span>
+      </div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>开始日期</th><th></th></tr></thead>
+          <thead><tr><th>开始日期</th><th>距离上次</th><th></th></tr></thead>
           <tbody id="periodTableBody"></tbody>
         </table>
       </div>
@@ -278,12 +270,16 @@
     <div class="card">
       <div class="card-title"><span class="icon">⚖️</span>记录体重</div>
       <div class="form-row">
-        <label>日期</label>
-        <input type="date" id="weightDate" lang="zh-CN">
-      </div>
-      <div class="form-row">
-        <label>体重（kg）</label>
-        <input type="number" id="weightVal" step="0.1" placeholder="如 55.5">
+        <div style="display:flex; gap:10px;">
+          <div style="flex:1; min-width:0;">
+            <label>日期</label>
+            <input type="date" id="weightDate" lang="zh-CN">
+          </div>
+          <div style="flex:1; min-width:0;">
+            <label>体重（kg）</label>
+            <input type="number" id="weightVal" step="0.01" placeholder="如 55.50">
+          </div>
+        </div>
       </div>
       <div class="form-row" style="position:relative;">
         <label>饮食（可选）</label>
@@ -339,7 +335,7 @@
       <div class="card-title"><span class="icon">🏆</span>饮食掉秤榜</div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>掉秤幅度</th><th>日期</th><th>食物</th></tr></thead>
+          <thead><tr><th>最高掉秤幅度</th><th>最低掉秤幅度</th><th>食物</th></tr></thead>
           <tbody id="dietBoardBody"></tbody>
         </table>
       </div>
@@ -427,11 +423,13 @@ function fmtDate(d) {
 }
 
 // ====== 页面切换 ======
+const PAGE_TITLES = { period: '经期', weight: '体重', anniv: '纪念日' };
 function switchPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
+  document.getElementById('topTitle').textContent = PAGE_TITLES[name] || '记录平台';
   if (name === 'period') { renderPeriod(); }
   if (name === 'weight') { renderWeight(); }
   if (name === 'anniv')  { renderAnniv(); }
@@ -510,22 +508,22 @@ function getFertileDays() {
 }
 
 function renderPeriod() {
-  // 统计
+  // 统计（统计卡已移除，此处仅用于下方计算）
   const avgCycle = getAvgCycle();
   const next = getNextPeriodPredict();
-  document.getElementById('periodAvgCycle').innerHTML = (avgCycle || '--') + '<span class="unit">天</span>';
-  document.getElementById('periodNextPredict').textContent = next ? cnDate(next) : '--';
 
-  // 记录卡：还剩多少天
+  // 记录卡：还剩多少天（文字“还有”，数字标红）
   const daysLeftEl = document.getElementById('periodDaysLeft');
   if (!next) {
     daysLeftEl.innerHTML = '记录首次经期后开始计算周期与倒计时。';
   } else {
     const dl = daysBetween(todayStr(), next);
-    if (dl > 0) daysLeftEl.innerHTML = '距下次经期还有 <strong>' + dl + '</strong> 天';
+    if (dl > 0) daysLeftEl.innerHTML = '还有 <strong style="color:var(--danger)">' + dl + '</strong> 天';
     else if (dl === 0) daysLeftEl.innerHTML = '⚠️ 预测经期就在今天，请留意身体变化。';
-    else daysLeftEl.innerHTML = '已超过预测经期 <strong>' + Math.abs(dl) + '</strong> 天，留意是否漏记。';
+    else daysLeftEl.innerHTML = '已超过预测经期 <strong style="color:var(--danger)">' + Math.abs(dl) + '</strong> 天，留意是否漏记。';
   }
+  // 记录卡：下次预测日期
+  document.getElementById('periodNextLine').textContent = next ? ('下次预测 ' + cnDate(next)) : '';
 
   // 日历
   renderCalendar();
@@ -533,14 +531,23 @@ function renderPeriod() {
   // 历史表
   const tbody = document.getElementById('periodTableBody');
   const empty = document.getElementById('periodEmpty');
+  const avgInline = document.getElementById('periodAvgCycleInline');
+  if (avgCycle) avgInline.textContent = '平均周期 ' + avgCycle + ' 天';
+  else avgInline.textContent = '';
+
   if (periods.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
+    const asc = periods.slice().sort((a, b) => a.start < b.start ? -1 : 1);
     tbody.innerHTML = periods.slice().reverse().map(p => {
+      const idx = asc.findIndex(x => x.ts === p.ts);
+      let since = '—';
+      if (idx > 0) since = daysBetween(asc[idx - 1].start, p.start) + ' 天';
       return `<tr>
         <td>${cnDate(p.start)}</td>
+        <td>${since}</td>
         <td><button class="btn btn-danger" onclick="deletePeriod(${p.ts})">删除</button></td>
       </tr>`;
     }).join('');
@@ -665,8 +672,8 @@ function totalChangeJin(list) {
   const sorted = list.slice().sort((a, b) => a.date < b.date ? -1 : 1);
   const jin = (sorted[sorted.length - 1].val - sorted[0].val) * 2;
   if (Math.abs(jin) < 0.05) return '持平';
-  if (jin < 0) return `<span style="color:var(--success)">减重 ${Math.abs(jin).toFixed(1)}</span><span class="unit">斤</span>`;
-  return `<span style="color:var(--danger)">增重 ${jin.toFixed(1)}</span><span class="unit">斤</span>`;
+  if (jin < 0) return `<span style="color:var(--success)">减重 ${Math.abs(jin).toFixed(2)}</span><span class="unit">斤</span>`;
+  return `<span style="color:var(--danger)">增重 ${jin.toFixed(2)}</span><span class="unit">斤</span>`;
 }
 
 function renderWeight() {
@@ -678,7 +685,7 @@ function renderWeight() {
     document.getElementById('weightTrend').textContent = '--';
   } else {
     const latest = weights[weights.length - 1];
-    document.getElementById('weightLatest').innerHTML = latest.val.toFixed(1) + '<span class="unit">kg</span>';
+    document.getElementById('weightLatest').innerHTML = latest.val.toFixed(2) + '<span class="unit">kg</span>';
 
     const today = new Date();
     const sevenAgo = new Date(today); sevenAgo.setDate(sevenAgo.getDate() - 7);
@@ -696,7 +703,7 @@ function renderWeight() {
       const diff = weights[weights.length-1].val - weights[weights.length-2].val;
       const sign = diff > 0 ? '+' : '';
       const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
-      document.getElementById('weightTrend').innerHTML = `<span style="color:${color}">${sign}${diff.toFixed(1)}kg</span>`;
+      document.getElementById('weightTrend').innerHTML = `<span style="color:${color}">${sign}${diff.toFixed(2)}kg</span>`;
     } else {
       document.getElementById('weightTrend').textContent = '--';
     }
@@ -721,13 +728,13 @@ function renderWeight() {
         const diff = w.val - prev.val;
         const sign = diff > 0 ? '+' : '';
         const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
-        change = `<span style="color:${color}">${sign}${diff.toFixed(1)}kg</span>`;
+        change = `<span style="color:${color}">${sign}${diff.toFixed(2)}kg</span>`;
       } else {
         change = '--';
       }
       return `<tr>
-        <td>${mdyDate(w.date)}</td>
-        <td><strong>${w.val.toFixed(1)}</strong> kg</td>
+        <td>${mdyDateBr(w.date)}</td>
+        <td><strong>${w.val.toFixed(2)}</strong> kg</td>
         <td>${change}</td>
         <td style="font-size:11px;color:var(--text-light)">${w.note || ''}</td>
         <td><button class="btn btn-danger" onclick="deleteWeight(${w.ts})">删除</button></td>
@@ -776,7 +783,7 @@ function renderWeightChart(id, data) {
     const v = minV + (span * i / 2);
     const y = pad.top + ch - (i / 2) * ch;
     yTicks += `<line x1="${pad.left}" y1="${y}" x2="${w-pad.right}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
-    yTicks += `<text x="${pad.left-6}" y="${y+3}" font-size="9" fill="var(--text-light)" text-anchor="end">${v.toFixed(1)}</text>`;
+    yTicks += `<text x="${pad.left-6}" y="${y+3}" font-size="9" fill="var(--text-light)" text-anchor="end">${v.toFixed(2)}</text>`;
   }
 
   // X 轴标签
@@ -815,6 +822,13 @@ function mdyDate(s) {
   return `${mm}-${dd}-${d.getFullYear()}`;
 }
 
+function mdyDateBr(s) {
+  const d = parseDate(s);
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${mm}-${dd}-<br><span class="yr">${d.getFullYear()}</span>`;
+}
+
 function refreshDietHistory() {
   const set = new Set();
   weights.forEach(w => { if (w.note && w.note.trim()) set.add(w.note.trim()); });
@@ -828,20 +842,30 @@ function renderDietLossBoard() {
   const sorted = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
   const events = [];
   for (let i = 1; i < sorted.length; i++) {
-    const loss = sorted[i-1].val - sorted[i].val; // 较前一天轻了 = 掉秤(正)
+    const loss = sorted[i-1].val - sorted[i].val; // 较前一天轻了 = 掉秤(正,kg)
     if (loss > 0) {
-      events.push({ lossJin: loss * 2, date: sorted[i].date, food: sorted[i].note || '—' });
+      events.push({ lossKg: loss, food: (sorted[i].note || '').trim() || '—' });
     }
   }
-  events.sort((a, b) => b.lossJin - a.lossJin);
-  if (events.length === 0) {
+  // 按食物分组：同一食物取最高/最低掉秤
+  const byFood = {};
+  for (const e of events) {
+    if (!byFood[e.food]) byFood[e.food] = { food: e.food, max: e.lossKg, min: e.lossKg };
+    else {
+      if (e.lossKg > byFood[e.food].max) byFood[e.food].max = e.lossKg;
+      if (e.lossKg < byFood[e.food].min) byFood[e.food].min = e.lossKg;
+    }
+  }
+  const rows = Object.values(byFood);
+  rows.sort((a, b) => b.max - a.max); // 按最高掉秤幅度排序
+  if (rows.length === 0) {
     tbody.innerHTML = ''; empty.style.display = 'block';
   } else {
     empty.style.display = 'none';
-    tbody.innerHTML = events.map(e => `<tr>
-      <td style="color:var(--success);font-weight:700;white-space:nowrap;">掉秤 ${e.lossJin.toFixed(1)} 斤</td>
-      <td style="white-space:nowrap;">${mdyDate(e.date)}</td>
-      <td style="white-space:normal;min-width:88px;">${e.food}</td>
+    tbody.innerHTML = rows.map(r => `<tr>
+      <td style="color:var(--success);font-weight:700;white-space:nowrap;">${r.max.toFixed(2)}kg</td>
+      <td style="color:var(--warning);white-space:nowrap;">${r.min.toFixed(2)}kg</td>
+      <td style="white-space:normal;min-width:120px;">${r.food}</td>
     </tr>`).join('');
   }
 }
@@ -954,6 +978,7 @@ function init() {
   const d = new Date();
   const weekdays = ['日','一','二','三','四','五','六'];
   document.getElementById('topDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
+  document.getElementById('topTitle').textContent = PAGE_TITLES['period'];
 
   // 默认日期填入今天
   document.getElementById('weightDate').value = todayStr();
