@@ -154,7 +154,7 @@
   }
   .period-cal .day.period { background: var(--pink); color: white; font-weight: 700; }
   .period-cal .day.predicted { background: var(--pink-light); color: var(--pink); }
-  .period-cal .day.fertile { background: #D8F0DC; color: #2D7D46; }
+  .period-cal .day.fertile { background: var(--bg); color: var(--text); border: 2px solid var(--success); }
   .period-cal .day.ovulation { background: transparent; color: var(--text); border: 2px solid var(--pink); font-weight: 700; }
   .period-cal .day.today { background: var(--success); color: white; font-weight: 700; border: none; box-shadow: none; }
   .period-cal .day.other-month { opacity: 0.3; }
@@ -218,14 +218,15 @@
   .diet-suggest .diet-opt:last-child { border-bottom: none; }
   .diet-suggest .diet-opt:hover { background: var(--bg); }
   #weightHistoryTable thead th, #weightTableBody td { white-space: nowrap; }
-  #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 92px; min-width: 82px; vertical-align: top; text-align: left; }
+  #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 84px; min-width: 74px; vertical-align: top; text-align: left; }
   #weightTableBody td:nth-child(3), #weightHistoryTable thead th:nth-child(3) { white-space: nowrap; width: 64px; min-width: 56px; }
   #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 120px; }
   .weight-form-line { display: flex; gap: 10px; align-items: stretch; }
   .weight-form-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .weight-form-col.date-col { flex: 0.7; }
-  .weight-form-col.weight-col { flex: 1; }
+  .weight-form-col.date-col { flex: 1.6; }
+  .weight-form-col.weight-col { flex: 0.7; }
   .weight-form-col input { height: 46px; padding: 0 10px; line-height: 46px; box-sizing: border-box; }
+  .weight-col input { text-align: right; }
   .yr { font-size: 10px; color: var(--text-light); }
   .next-predict { font-size: 13px; color: var(--text-light); text-align: center; margin-bottom: 12px; }
   .diet-board-table { table-layout: fixed; width: 100%; min-width: 0; }
@@ -294,7 +295,15 @@
       <div class="card-title"><span class="icon">🌸</span>记录经期</div>
       <div class="days-left" id="periodDaysLeft"></div>
       <div class="next-predict" id="periodNextLine"></div>
-      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">经期刚刚开始</button>
+      <div class="form-row">
+        <label>开始日期</label>
+        <input type="date" id="periodStart" lang="zh-CN">
+      </div>
+      <div class="form-row">
+        <label>结束日期（可选）</label>
+        <input type="date" id="periodEnd" lang="zh-CN">
+      </div>
+      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">保存经期</button>
     </div>
 
     <!-- 经期日历 -->
@@ -550,8 +559,10 @@ function switchPage(name) {
 
 // ====== 经期模块 ======
 function savePeriod() {
-  const start = todayStr();
-  periods.push({ start, end: null, flow: 'normal', note: '', ts: Date.now() });
+  const start = document.getElementById('periodStart').value || todayStr();
+  let end = document.getElementById('periodEnd').value || null;
+  if (end && end < start) end = start; // 防错：结束不早于开始
+  periods.push({ start, end, flow: 'normal', note: '', ts: Date.now() });
   periods.sort((a,b) => a.start < b.start ? -1 : 1);
   savePeriods();
   renderPeriod();
@@ -563,6 +574,19 @@ function deletePeriod(ts) {
   periods = periods.filter(p => p.ts !== ts);
   savePeriods();
   renderPeriod();
+}
+
+// 修改：回填到顶部经期表单，保存时覆盖原记录
+function editPeriod(ts) {
+  const p = periods.find(x => x.ts === ts);
+  if (!p) return;
+  document.getElementById('periodStart').value = p.start;
+  document.getElementById('periodEnd').value = p.end || '';
+  // 覆盖式保存：先移除旧记录，保存时以新 ts 写入
+  periods = periods.filter(x => x.ts !== ts);
+  savePeriods();
+  renderPeriod();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function getPeriodDuration(p) {
@@ -660,7 +684,8 @@ function renderPeriod() {
       return `<tr>
         <td>${cnDate(p.start)}</td>
         <td>${since}</td>
-        <td><button class="btn btn-danger" onclick="deletePeriod(${p.ts})">删除</button></td>
+        <td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="editPeriod(${p.ts})">修改</button></td>
+        <td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deletePeriod(${p.ts})">删除</button></td>
       </tr>`;
     }).join('');
   }
@@ -890,8 +915,8 @@ function showWeightPointPopup(date, val, change, food) {
   popup.innerHTML = `
     <span class="pop-close" onclick="document.getElementById('weightChartPopup').style.display='none'">×</span>
     <div class="pop-date">${cnDate(date)}</div>
-    <div class="pop-row"><span class="pop-label">体重</span><span class="pop-value">${fmtKg(val)}kg</span></div>
     <div class="pop-row"><span class="pop-label">减幅</span><span class="pop-value">${chHtml}</span></div>
+    <div class="pop-row"><span class="pop-label">体重</span><span class="pop-value">${fmtKg(val)}kg</span></div>
     <div class="pop-row"><span class="pop-label">饮食</span><span class="pop-value">${food || '—'}</span></div>
   `;
   popup.style.display = 'block';
@@ -979,10 +1004,15 @@ function renderDietLossBoard() {
   const empty = document.getElementById('dietBoardEmpty');
   const sorted = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
   const events = [];
-  for (let i = 1; i < sorted.length; i++) {
-    const loss = sorted[i-1].val - sorted[i].val; // 较前一天轻了 = 掉秤(正,kg)
-    if (loss > 0) {
-      events.push({ lossKg: loss, food: (sorted[i].note || '').trim() || '—' });
+  // 当天吃的食物，其掉秤幅度 = 次日体重 − 当天体重（掉秤为正）。
+  // 例：8/22吃饺子(82.75)、8/23吃牛肉(82.25) → 饺子=82.25-82.75=-0.5(掉0.5)，牛肉=81.9-82.25=-0.35(掉0.35)
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const cur = sorted[i];
+    const food = (cur.note || '').trim();
+    if (!food) continue; // 当天没记录饮食则不计
+    const drop = cur.val - sorted[i + 1].val; // 当天体重 − 次日体重 = 掉秤幅度(正=掉秤)
+    if (drop > 0) {
+      events.push({ lossKg: drop, food });
     }
   }
   // 按食物分组：同一食物取最高/最低掉秤
@@ -1123,6 +1153,8 @@ function init() {
   // 默认日期填入今天
   document.getElementById('weightDate').value = todayStr();
   document.getElementById('annivDate').value = todayStr();
+  const periodStartEl = document.getElementById('periodStart');
+  if (periodStartEl) periodStartEl.value = todayStr();
   initDietAutocomplete();
 
   renderPeriod();
