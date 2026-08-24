@@ -220,8 +220,8 @@
   #weightHistoryTable thead th, #weightTableBody td { white-space: nowrap; }
   #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 76px; min-width: 66px; vertical-align: top; text-align: left; }
   #weightTableBody td:nth-child(3), #weightHistoryTable thead th:nth-child(3) { white-space: nowrap; width: 56px; min-width: 48px; }
-  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 110px; }
-  #weightTableBody td:nth-child(5), #weightHistoryTable thead th:nth-child(5) { white-space: normal; min-width: 56px; width: 64px; }
+  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 128px; }
+  #weightTableBody td:nth-child(5), #weightHistoryTable thead th:nth-child(5) { white-space: normal; min-width: 96px; width: 96px; }
   .weight-form-line { display: flex; gap: 10px; align-items: stretch; }
   .weight-form-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .weight-form-col.date-col { flex: 1.6; }
@@ -237,7 +237,7 @@
   .diet-board-table th:nth-child(1), .diet-board-table td:nth-child(1) { width: 30px; }
   .diet-board-table th:nth-child(2), .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(2), .diet-board-table td:nth-child(3) { width: 48px; }
   .diet-board-table th:nth-child(4), .diet-board-table td:nth-child(4) { width: auto; }
-  .diet-board-table th:nth-child(5), .diet-board-table td:nth-child(5) { width: 64px; }
+  .diet-board-table th:nth-child(5), .diet-board-table td:nth-child(5) { width: 96px; }
   .weight-scale-card {
     text-align: center; padding: 18px 8px 16px;
     background: linear-gradient(135deg, #2196F3, #03A9F4);
@@ -277,15 +277,16 @@
 
   /* 内滑条容器：历史记录 / 饮食掉秤榜 */
   .hist-scroll, .diet-scroll {
-    max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    min-height: 576px; max-height: 576px; overflow-y: auto; -webkit-overflow-scrolling: touch;
     border-radius: 8px;
   }
   .hist-scroll table, .diet-scroll table { min-width: 420px; }
+  #birthdayTable { table-layout: fixed; width: 100%; }
   #birthdayTable thead th, #birthdayBody td { white-space: nowrap; }
-  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 64px; }
-  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: auto; min-width: 80px; }
-  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 64px; }
-  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 72px; }
+  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: auto; }
+  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 54px; min-width: 54px; max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: auto; }
+  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: auto; }
 
   .weekly-modal-mask {
     position: fixed; inset: 0; background: rgba(61,43,69,0.55);
@@ -476,9 +477,9 @@
     <div class="card">
       <div class="card-title"><span class="icon">🎉</span>添加纪念日</div>
       <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
-        <div class="weight-form-col" style="flex:1.4;">
-          <label>名称</label>
-          <input type="text" id="annivName" placeholder="如结婚纪念日、生日">
+        <div class="weight-form-col" style="flex:1.2;">
+          <label>名称（姓名）</label>
+          <input type="text" id="annivName" placeholder="如小明" style="width:96px;max-width:96px;flex:none;">
         </div>
         <div class="weight-form-col" style="flex:1;">
           <label>类型</label>
@@ -491,16 +492,21 @@
         </div>
       </div>
       <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
-        <div class="weight-form-col date-col">
-          <label>日期</label>
-          <input type="date" id="annivDate" lang="zh-CN">
-        </div>
         <div class="weight-form-col" style="flex:1;">
           <label>历法</label>
-          <select id="annivCal">
+          <select id="annivCal" onchange="toggleAnnivDateMode()">
             <option value="solar" selected>阳历</option>
             <option value="lunar">农历</option>
           </select>
+        </div>
+        <div class="weight-form-col date-col" style="flex:1.6;">
+          <label>日期</label>
+          <input type="date" id="annivDate" lang="zh-CN">
+          <div id="lunarDateWrap" style="display:none;gap:6px;flex-wrap:wrap;">
+            <input type="number" id="lunarYear" placeholder="年" style="width:72px;height:46px;padding:0 8px;box-sizing:border-box;">
+            <select id="lunarMonth" style="height:46px;"></select>
+            <select id="lunarDay" style="height:46px;"></select>
+          </div>
         </div>
       </div>
       <button class="btn btn-primary" onclick="saveAnniv()" style="width:100%;">保存</button>
@@ -511,7 +517,7 @@
       <div class="card-title"><span class="icon">🎂</span>生日倒计时</div>
       <div class="table-scroll">
         <table id="birthdayTable">
-          <thead><tr><th>还有几天</th><th>名称</th><th>当年岁数</th><th>生日年份</th></tr></thead>
+          <thead><tr><th>还有几天</th><th>名称</th><th>今年岁数</th><th>出生日期</th></tr></thead>
           <tbody id="birthdayBody"></tbody>
         </table>
       </div>
@@ -1257,17 +1263,49 @@ function lunarToSolar(ly, lm, ld, isLeap) {
 }
 
 // ====== 纪念日模块 ======
+// 农历月/日下拉初始化
+function initLunarSelectors() {
+  const mSel = document.getElementById('lunarMonth');
+  const dSel = document.getElementById('lunarDay');
+  if (mSel && mSel.options.length === 0) {
+    LUNAR_MONTH.forEach((nm, i) => {
+      const o = document.createElement('option'); o.value = i + 1; o.textContent = nm + '月'; mSel.appendChild(o);
+    });
+  }
+  if (dSel && dSel.options.length === 0) {
+    LUNAR_DAY.forEach((nm, i) => {
+      const o = document.createElement('option'); o.value = i + 1; o.textContent = nm; dSel.appendChild(o);
+    });
+  }
+}
+function toggleAnnivDateMode() {
+  const cal = document.getElementById('annivCal').value;
+  const isLunar = cal === 'lunar';
+  document.getElementById('annivDate').style.display = isLunar ? 'none' : '';
+  document.getElementById('lunarDateWrap').style.display = isLunar ? 'flex' : 'none';
+}
+
 function saveAnniv() {
   const name = document.getElementById('annivName').value.trim();
-  const date = document.getElementById('annivDate').value;
   const type = document.getElementById('annivType').value;
   const cal = document.getElementById('annivCal').value;
   if (!name) { alert('请输入名称'); return; }
-  if (!date) { alert('请选择日期'); return; }
-  annivs.push({ name, date, type, cal, ts: Date.now() });
+  let date = '', lm = null, ld = null, lunarText = '';
+  if (cal === 'lunar') {
+    const ly = parseInt(document.getElementById('lunarYear').value, 10);
+    lm = parseInt(document.getElementById('lunarMonth').value, 10);
+    ld = parseInt(document.getElementById('lunarDay').value, 10);
+    if (!ly || !lm || !ld) { alert('请填写完整农历日期'); return; }
+    const solar = lunarToSolar(ly, lm, ld, false);
+    date = solar;
+    lunarText = `${ly}年${LUNAR_MONTH[lm-1]}月${LUNAR_DAY[ld-1]}`;
+  } else {
+    date = document.getElementById('annivDate').value;
+    if (!date) { alert('请选择日期'); return; }
+  }
+  annivs.push({ name, date, type, cal, lm, ld, lunarText, ts: Date.now() });
   saveAnnivs();
   document.getElementById('annivName').value = '';
-  document.getElementById('annivDate').value = '';
   renderAnniv();
   alert('已保存');
 }
@@ -1280,18 +1318,20 @@ function deleteAnniv(ts) {
 }
 
 // 返回当年（或明年）对应的阳历日历日：农历按农历月日换算到阳历
-function anniversarySolarDate(a) {
-  const target = parseDate(a.date);
-  const year = new Date().getFullYear();
-  let solar;
-  if (a.cal === 'lunar') {
-    const lm = target.getMonth() + 1;
-    const ld = target.getDate();
-    solar = lunarToSolar(year, lm, ld, false);
-  } else {
-    solar = `${year}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+function anniversarySolarDate(a, yearOffset) {
+  const year = (new Date().getFullYear()) + (yearOffset || 0);
+  if (a.cal === 'lunar' && a.lm && a.ld) {
+    return lunarToSolar(year, a.lm, a.ld, false);
   }
-  return solar;
+  const target = parseDate(a.date);
+  return `${year}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+}
+
+// 出生日期展示文本
+function birthDateText(a) {
+  if (a.cal === 'lunar' && a.lunarText) return a.lunarText;
+  const d = parseDate(a.date);
+  return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
 }
 
 function getAnnivInfo(a) {
@@ -1308,30 +1348,27 @@ function getAnnivInfo(a) {
   if (a.type === 'birthday') {
     // 生日：当年/明年最近一次生日（已过的算明年）
     const year = new Date().getFullYear();
-    let solar = anniversarySolarDate(a);
+    let solar = anniversarySolarDate(a, 0);
     let bd = parseDate(solar);
     const t0 = new Date(today + 'T00:00:00');
     if (bd < t0) {
-      // 明年生日
-      if (a.cal === 'lunar') solar = lunarToSolar(year + 1, target.getMonth() + 1, target.getDate(), false);
-      else solar = `${year+1}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+      solar = anniversarySolarDate(a, 1); // 明年生日
       bd = parseDate(solar);
     }
     const days = Math.round((bd - t0) / 86400000);
-    const age = bd.getFullYear() - target.getFullYear();
-    return { days, label: '天后', past: false, age, isBirthday: true, birthYear: target.getFullYear(), displaySolar: solar };
+    const age = bd.getFullYear() - parseDate(a.date).getFullYear();
+    return { days, label: '天后', past: false, age, isBirthday: true, birthDateText: birthDateText(a), displaySolar: solar };
   }
   // anniversary: 计算今年/明年的纪念日
   const year = new Date().getFullYear();
-  let solar = anniversarySolarDate(a);
+  let solar = anniversarySolarDate(a, 0);
   let thisYear = parseDate(solar);
   if (thisYear < new Date(today + 'T00:00:00')) {
-    if (a.cal === 'lunar') solar = lunarToSolar(year + 1, target.getMonth() + 1, target.getDate(), false);
-    else solar = `${year+1}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+    solar = anniversarySolarDate(a, 1);
     thisYear = parseDate(solar);
   }
   const days = Math.round((thisYear - new Date(today + 'T00:00:00')) / 86400000);
-  const age = year - target.getFullYear() - (thisYear.getFullYear() === year + 1 ? 1 : 0);
+  const age = year - parseDate(a.date).getFullYear() - (thisYear.getFullYear() === year + 1 ? 1 : 0);
   return { days, label: '天后', past: false, age, isAnniversary: true, thisYearDate: fmtDate(thisYear) };
 }
 
@@ -1363,7 +1400,7 @@ function renderAnniv() {
     return `<div class="anniv-item">
       <div class="anniv-info">
         <div class="anniv-name">${a.name}</div>
-        <div class="anniv-date">${cnDate(a.date)}${calLabel} · ${typeLabels[a.type]}</div>
+        <div class="anniv-date">${a.cal === 'lunar' && a.lunarText ? a.lunarText : cnDate(a.date)}${calLabel} · ${typeLabels[a.type]}</div>
       </div>
       <div class="anniv-countdown">
         <div class="anniv-days ${info.past ? 'past' : ''}">${info.days}</div>
@@ -1391,7 +1428,7 @@ function renderBirthdayBoard() {
       <td style="color:var(--primary);font-weight:700;">${info.days}天</td>
       <td>${a.name}</td>
       <td style="text-align:center;">${info.age}岁</td>
-      <td style="text-align:center;">${info.birthYear}年</td>
+      <td style="text-align:center;">${info.birthDateText}</td>
     </tr>`).join('');
   }
 }
@@ -1453,6 +1490,8 @@ function init() {
   const periodStartEl = document.getElementById('periodStart');
   if (periodStartEl) periodStartEl.value = todayStr();
   initDietAutocomplete();
+  initLunarSelectors();
+  toggleAnnivDateMode();
 
   renderWeight();
   renderPeriod();
