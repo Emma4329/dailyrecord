@@ -1219,9 +1219,9 @@ function solarToLunar(y, m, d) {
   for (ly = 1900; ly < 2101 && offset > 0; ly++) { temp = lunarYearDays(ly); offset -= temp; }
   if (offset < 0) { offset += temp; ly--; }
   const leap = leapMonth(ly);
-  let isLeap = false, lm;
+  let isLeap = false, lm, dm = 0;
   for (lm = 1; lm <= 12 && offset > 0; lm++) {
-    let dm = lunarMonthDays(ly, lm);
+    dm = lunarMonthDays(ly, lm);
     if (leap > 0 && lm === leap + 1 && !isLeap) {
       // 进入闰月
       isLeap = true; dm = leapMonthDays(ly); lm--;
