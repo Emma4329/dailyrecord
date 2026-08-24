@@ -282,11 +282,21 @@
   }
   .hist-scroll table, .diet-scroll table { min-width: 420px; }
   #birthdayTable { table-layout: fixed; width: 100%; }
-  #birthdayTable thead th, #birthdayBody td { white-space: nowrap; }
-  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: auto; }
-  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 54px; min-width: 54px; max-width: 54px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: auto; }
-  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: auto; }
+  #birthdayTable thead th, #birthdayBody td { width: 25%; text-align: center; vertical-align: middle; }
+  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2),
+  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { white-space: normal; word-break: break-all; }
+  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1),
+  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { white-space: nowrap; }
+
+  .anniv-list-table { table-layout: fixed; width: 100%; border-collapse: collapse; }
+  .anniv-list-table th, .anniv-list-table td { border-bottom: 1px solid var(--border); padding: 10px 4px; font-size: 12px; text-align: center; vertical-align: middle; }
+  .anniv-list-table thead th { color: var(--text-light); font-weight: 600; background: var(--bg); }
+  .anniv-list-table th:nth-child(1), .anniv-list-table td:nth-child(1) { width: 22%; white-space: normal; word-break: break-all; }
+  .anniv-list-table th:nth-child(2), .anniv-list-table td:nth-child(2) { width: 26%; white-space: normal; word-break: break-all; }
+  .anniv-list-table th:nth-child(3), .anniv-list-table td:nth-child(3) { width: 22%; }
+  .anniv-list-table th:nth-child(4), .anniv-list-table td:nth-child(4) { width: 18%; white-space: normal; }
+  .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 12%; }
+  .anniv-list-table .btn-danger { padding: 4px 8px; font-size: 11px; }
 
   .weekly-modal-mask {
     position: fixed; inset: 0; background: rgba(61,43,69,0.55);
@@ -476,7 +486,7 @@
   <div class="page" id="page-anniv">
     <div class="card">
       <div class="card-title"><span class="icon">🎉</span>添加纪念日</div>
-      <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
+      <div class="form-row" style="display:flex;flex-direction:row;gap:10px;align-items:flex-end;">
         <div class="weight-form-col" style="flex:1.2;">
           <label>名称（姓名）</label>
           <input type="text" id="annivName" placeholder="如小明" style="width:96px;max-width:96px;flex:none;">
@@ -491,7 +501,7 @@
           </select>
         </div>
       </div>
-      <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
+      <div class="form-row" style="display:flex;flex-direction:row;gap:10px;align-items:flex-end;">
         <div class="weight-form-col" style="flex:1;">
           <label>历法</label>
           <select id="annivCal" onchange="toggleAnnivDateMode()">
@@ -1390,26 +1400,25 @@ function renderAnniv() {
     return x.info.days - y.info.days;
   });
 
-  list.innerHTML = sorted.map(({ a, info }) => {
-    const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起', birthday: '生日' };
-    const calLabel = a.cal === 'lunar' ? '（农历）' : '';
-    let ageStr = '';
-    if (info.isAnniversary && info.age !== undefined) ageStr = `<span style="font-size:11px;color:var(--text-light)">第${info.age}个</span>`;
-    if (info.isBirthday && info.age !== undefined) ageStr = `<span style="font-size:11px;color:var(--text-light)">${info.age}岁</span>`;
-    if (info.isTogether) ageStr = '';
-    return `<div class="anniv-item">
-      <div class="anniv-info">
-        <div class="anniv-name">${a.name}</div>
-        <div class="anniv-date">${a.cal === 'lunar' && a.lunarText ? a.lunarText : cnDate(a.date)}${calLabel} · ${typeLabels[a.type]}</div>
-      </div>
-      <div class="anniv-countdown">
-        <div class="anniv-days ${info.past ? 'past' : ''}">${info.days}</div>
-        <div class="anniv-label">${info.label}</div>
-        ${ageStr}
-      </div>
-      <button class="btn btn-danger" onclick="deleteAnniv(${a.ts})" style="margin-left:8px;">删除</button>
-    </div>`;
+  const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起', birthday: '生日' };
+  let rows = sorted.map(({ a, info }) => {
+    const dateText = a.cal === 'lunar' && a.lunarText ? a.lunarText : cnDate(a.date);
+    let daysText;
+    if (info.isTogether) daysText = `${Math.max(0, info.days)}天`;
+    else if (info.past) daysText = `已过${-info.days}天`;
+    else daysText = `还有${info.days}天`;
+    return `<tr>
+      <td class="anniv-td-name">${a.name}</td>
+      <td>${dateText}</td>
+      <td>${typeLabels[a.type]}</td>
+      <td>${daysText}</td>
+      <td class="anniv-td-del"><button class="btn btn-danger" onclick="deleteAnniv(${a.ts})">删除</button></td>
+    </tr>`;
   }).join('');
+  list.innerHTML = `<table class="anniv-list-table">
+    <thead><tr><th>名称</th><th>日期</th><th>类型</th><th>距今天数</th><th></th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
 }
 
 function renderBirthdayBoard() {
