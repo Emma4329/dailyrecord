@@ -218,15 +218,15 @@
   .diet-suggest .diet-opt:last-child { border-bottom: none; }
   .diet-suggest .diet-opt:hover { background: var(--bg); }
   #weightHistoryTable thead th, #weightTableBody td { white-space: nowrap; }
-  #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 84px; min-width: 74px; vertical-align: top; text-align: left; }
-  #weightTableBody td:nth-child(3), #weightHistoryTable thead th:nth-child(3) { white-space: nowrap; width: 64px; min-width: 56px; }
-  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 90px; }
-  #weightTableBody td:nth-child(5), #weightHistoryTable thead th:nth-child(5) { white-space: normal; min-width: 48px; width: 56px; }
+  #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 76px; min-width: 66px; vertical-align: top; text-align: left; }
+  #weightTableBody td:nth-child(3), #weightHistoryTable thead th:nth-child(3) { white-space: nowrap; width: 56px; min-width: 48px; }
+  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 110px; }
+  #weightTableBody td:nth-child(5), #weightHistoryTable thead th:nth-child(5) { white-space: normal; min-width: 56px; width: 64px; }
   .weight-form-line { display: flex; gap: 10px; align-items: stretch; }
   .weight-form-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .weight-form-col.date-col { flex: 1.6; }
   .weight-form-col.weight-col { flex: 0.7; }
-  .weight-form-col.date-col input { width: 128px; max-width: 128px; flex: none; }
+  .weight-form-col.date-col input { width: 144px; max-width: 144px; flex: none; }
   .weight-form-col input { height: 46px; padding: 0 10px; line-height: 46px; box-sizing: border-box; }
   .weight-col input { text-align: right; }
   .yr { font-size: 10px; color: var(--text-light); }
@@ -237,7 +237,7 @@
   .diet-board-table th:nth-child(1), .diet-board-table td:nth-child(1) { width: 30px; }
   .diet-board-table th:nth-child(2), .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(2), .diet-board-table td:nth-child(3) { width: 48px; }
   .diet-board-table th:nth-child(4), .diet-board-table td:nth-child(4) { width: auto; }
-  .diet-board-table th:nth-child(5), .diet-board-table td:nth-child(5) { width: 56px; }
+  .diet-board-table th:nth-child(5), .diet-board-table td:nth-child(5) { width: 64px; }
   .weight-scale-card {
     text-align: center; padding: 18px 8px 16px;
     background: linear-gradient(135deg, #2196F3, #03A9F4);
@@ -274,6 +274,31 @@
     cursor: pointer; line-height: 1;
   }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+  /* 内滑条容器：历史记录 / 饮食掉秤榜 */
+  .hist-scroll, .diet-scroll {
+    max-height: 320px; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+  .hist-scroll table, .diet-scroll table { min-width: 420px; }
+  #birthdayTable thead th, #birthdayBody td { white-space: nowrap; }
+  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 64px; }
+  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: auto; min-width: 80px; }
+  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 64px; }
+  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 72px; }
+
+  .weekly-modal-mask {
+    position: fixed; inset: 0; background: rgba(61,43,69,0.55);
+    display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px;
+  }
+  .weekly-modal {
+    background: var(--card); border-radius: 16px; padding: 24px 22px; max-width: 320px;
+    width: 100%; box-shadow: 0 10px 40px rgba(0,0,0,0.25); text-align: center;
+  }
+  .weekly-modal .wm-icon { font-size: 44px; margin-bottom: 10px; }
+  .weekly-modal .wm-title { font-size: 18px; font-weight: 700; color: var(--primary-dark); margin-bottom: 8px; }
+  .weekly-modal .wm-text { font-size: 13px; color: var(--text-light); line-height: 1.7; margin-bottom: 18px; }
+  .weekly-modal .wm-btn { width: 100%; }
 
   .pill {
     display: inline-block; padding: 2px 8px; border-radius: 10px;
@@ -318,7 +343,7 @@
         <select id="weightFull">
           <option value="">不填</option>
           <option value="整天饱">整天饱</option>
-          <option value="半饱（7分）">半饱（7分）</option>
+          <option value="半饱（7点左右）">半饱（7点左右）</option>
           <option value="饿">饿</option>
         </select>
       </div>
@@ -367,20 +392,27 @@
 
     <!-- 历史记录 -->
     <div class="card">
-      <div class="card-title"><span class="icon">📜</span>历史记录</div>
-        <div class="table-scroll">
-          <table id="weightHistoryTable">
-            <thead><tr><th>减幅</th><th>日期</th><th>体重</th><th>饮食</th><th>饱腹感</th><th></th><th></th></tr></thead>
-            <tbody id="weightTableBody"></tbody>
-          </table>
-        </div>
+      <div class="card-title">
+        <span class="icon">📜</span>历史记录
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftHistMonth(-1)">上月</button>
+          <span id="histMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftHistMonth(1)">下月</button>
+        </span>
+      </div>
+      <div class="hist-scroll">
+        <table id="weightHistoryTable">
+          <thead><tr><th>减幅</th><th>日期</th><th>体重</th><th>饮食</th><th>饱腹感</th><th></th><th></th></tr></thead>
+          <tbody id="weightTableBody"></tbody>
+        </table>
+      </div>
       <div id="weightEmpty" class="empty-tip">暂无体重记录</div>
     </div>
 
     <!-- 饮食掉秤榜 -->
     <div class="card">
       <div class="card-title"><span class="icon">🏆</span>饮食掉秤榜</div>
-      <div class="table-scroll">
+      <div class="diet-scroll">
         <table class="diet-board-table">
           <thead><tr><th>#</th><th>最高幅度</th><th>最低幅度</th><th>食物</th><th>饱腹感</th></tr></thead>
           <tbody id="dietBoardBody"></tbody>
@@ -443,23 +475,47 @@
   <div class="page" id="page-anniv">
     <div class="card">
       <div class="card-title"><span class="icon">🎉</span>添加纪念日</div>
-      <div class="form-row">
-        <label>名称</label>
-        <input type="text" id="annivName" placeholder="如结婚纪念日、生日">
+      <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
+        <div class="weight-form-col" style="flex:1.4;">
+          <label>名称</label>
+          <input type="text" id="annivName" placeholder="如结婚纪念日、生日">
+        </div>
+        <div class="weight-form-col" style="flex:1;">
+          <label>类型</label>
+          <select id="annivType">
+            <option value="anniversary" selected>每年纪念日</option>
+            <option value="countdown">倒计时（单次）</option>
+            <option value="together">在一起天数</option>
+            <option value="birthday">生日</option>
+          </select>
+        </div>
       </div>
-      <div class="form-row">
-        <label>日期</label>
-        <input type="date" id="annivDate" lang="zh-CN">
-      </div>
-      <div class="form-row">
-        <label>类型</label>
-        <select id="annivType">
-          <option value="anniversary" selected>每年纪念日</option>
-          <option value="countdown">倒计时（单次）</option>
-          <option value="together">在一起天数</option>
-        </select>
+      <div class="form-row" style="display:flex;gap:10px;align-items:flex-end;">
+        <div class="weight-form-col date-col">
+          <label>日期</label>
+          <input type="date" id="annivDate" lang="zh-CN">
+        </div>
+        <div class="weight-form-col" style="flex:1;">
+          <label>历法</label>
+          <select id="annivCal">
+            <option value="solar" selected>阳历</option>
+            <option value="lunar">农历</option>
+          </select>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="saveAnniv()" style="width:100%;">保存</button>
+    </div>
+
+    <!-- 生日倒计时 -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🎂</span>生日倒计时</div>
+      <div class="table-scroll">
+        <table id="birthdayTable">
+          <thead><tr><th>还有几天</th><th>名称</th><th>当年岁数</th><th>生日年份</th></tr></thead>
+          <tbody id="birthdayBody"></tbody>
+        </table>
+      </div>
+      <div id="birthdayEmpty" class="empty-tip">暂无生日记录</div>
     </div>
 
     <!-- 纪念日列表 -->
@@ -482,6 +538,16 @@
   </div>
   <div class="nav-item" data-page="anniv" onclick="switchPage('anniv')">
     <span class="nav-icon anniv">🎉</span><span>纪念日</span>
+  </div>
+</div>
+
+<!-- 每周首次打开弹窗 -->
+<div class="weekly-modal-mask" id="weeklyModal" style="display:none;">
+  <div class="weekly-modal">
+    <div class="wm-icon">👋</div>
+    <div class="wm-title">本周记录台</div>
+    <div class="wm-text" id="weeklyModalText">新的一周，记得记录体重、经期和纪念日哦～</div>
+    <button class="btn btn-primary wm-btn" onclick="closeWeeklyModal()">知道了</button>
   </div>
 </div>
 
@@ -867,20 +933,33 @@ function renderWeight() {
   // 图表
   renderWeightChartMonth('weightChart');
 
-  // 历史表
+  // 历史表（按选中月份筛选）
   const tbody = document.getElementById('weightTableBody');
   const empty = document.getElementById('weightEmpty');
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('histMonthLabel').textContent = `${histYear}年${monthNames[histMonth]}`;
   if (weights.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
   } else {
-    empty.style.display = 'none';
-    const reversed = weights.slice().reverse();
-    tbody.innerHTML = reversed.map((w, i) => {
-      const next = reversed[i - 1]; // 按时间顺序的下一天
+    const monthWeights = weights.filter(w => {
+      const d = parseDate(w.date);
+      return d.getFullYear() === histYear && d.getMonth() === histMonth;
+    });
+    if (monthWeights.length === 0) {
+      tbody.innerHTML = '';
+      empty.style.display = 'block';
+      empty.textContent = '该月暂无体重记录';
+    } else {
+      empty.style.display = 'none';
+      const reversed = monthWeights.slice().reverse();
+      const allAsc = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
+      tbody.innerHTML = reversed.map((w) => {
+      const idx = allAsc.findIndex(x => x.ts === w.ts);
+      const next = (idx >= 0 && idx < allAsc.length - 1) ? allAsc[idx + 1] : null; // 实际下一条记录
       let change = '';
       if (next) {
-        const diff = next.val - w.val; // 明日 - 今日
+        const diff = next.val - w.val; // 下一条 - 本条
         const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
         change = `<span style="color:${color}">${fmtKg(diff, true)}kg</span>`;
       } else {
@@ -896,6 +975,7 @@ function renderWeight() {
         <td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteWeight(${w.ts})">删除</button></td>
       </tr>`;
     }).join('');
+    }
   }
 
   // 饮食记忆 + 掉秤榜
@@ -913,6 +993,19 @@ function shiftWeightChart(delta) {
   if (chartMonth < 0) { chartMonth = 11; chartYear--; }
   if (chartMonth > 11) { chartMonth = 0; chartYear++; }
   renderWeightChartMonth('weightChart');
+}
+
+// 历史记录月份筛选状态
+let histYear, histMonth;
+{
+  const d = new Date();
+  histYear = d.getFullYear(); histMonth = d.getMonth();
+}
+function shiftHistMonth(delta) {
+  histMonth += delta;
+  if (histMonth < 0) { histMonth = 11; histYear--; }
+  if (histMonth > 11) { histMonth = 0; histYear++; }
+  renderWeight();
 }
 function showWeightPointPopup(date, val, change, food, fullness) {
   const popup = document.getElementById('weightChartPopup');
@@ -1075,14 +1168,102 @@ function initDietAutocomplete() {
   noteInput.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
 }
 
+// ====== 农历转换（1900-2100） ======
+const LUNAR_INFO = [
+  0x04bd8,0x04ae0,0x0a570,0x054d5,0x0d260,0x0d950,0x16554,0x056a0,0x09ad0,0x055d2,
+  0x04ae0,0x0a5b6,0x0a4d0,0x0d250,0x1d255,0x0b540,0x0d6a0,0x0ada2,0x095b0,0x14977,
+  0x04970,0x0a4b0,0x0b4b5,0x06a50,0x06d40,0x1ab54,0x02b60,0x09570,0x052f2,0x04970,
+  0x06566,0x0d4a0,0x0ea50,0x06e95,0x05ad0,0x02b60,0x186e3,0x092e0,0x1c8d7,0x0c950,
+  0x0d4a0,0x1d8a6,0x0b550,0x056a0,0x1a5b4,0x025d0,0x092d0,0x0d2b2,0x0a950,0x0b557,
+  0x06ca0,0x0b550,0x15355,0x04da0,0x0a5b0,0x14573,0x052b0,0x0a9a8,0x0e950,0x06aa0,
+  0x0aea6,0x0ab50,0x04b60,0x0aae4,0x0a570,0x05260,0x0f263,0x0d950,0x05b57,0x056a0,
+  0x096d0,0x04dd5,0x04ad0,0x0a4d0,0x0d4d4,0x0d250,0x0d558,0x0b540,0x0b6a0,0x195a6,
+  0x095b0,0x049b0,0x0a974,0x0a4b0,0x0b27a,0x06a50,0x06d40,0x0af46,0x0ab60,0x09570,
+  0x04af5,0x04970,0x064b0,0x074a3,0x0ea50,0x06b58,0x055c0,0x0ab60,0x096d5,0x092e0,
+  0x0c960,0x0d954,0x0d4a0,0x0da50,0x07552,0x056a0,0x0abb7,0x025d0,0x092d0,0x0cab5,
+  0x0a950,0x0b4a0,0x0baa4,0x0ad50,0x055d9,0x04ba0,0x0a5b0,0x15176,0x052b0,0x0a930,
+  0x07954,0x06aa0,0x0ad50,0x05b52,0x04b60,0x0a6e6,0x0a4e0,0x0d260,0x0ea65,0x0d530,
+  0x05aa0,0x076a3,0x096d0,0x04afb,0x04ad0,0x0a4d0,0x1d0b6,0x0d250,0x0d520,0x0dd45,
+  0x0b5a0,0x056d0,0x055b2,0x049b0,0x0a577,0x0a4b0,0x0aa50,0x1b255,0x06d20,0x0ada0,
+  0x14b63,0x09370,0x049f8,0x04970,0x064b0,0x168a6,0x0ea50,0x06b20,0x1a6c4,0x0aae0,
+  0x0a2e0,0x0d2e3,0x0c960,0x0d557,0x0d4a0,0x0da50,0x05d55,0x056a0,0x0a6d0,0x055d4,
+  0x052d0,0x0a9b8,0x0a950,0x0b4a0,0x0b6a6,0x0ad50,0x055a0,0x0aba4,0x0a5b0,0x052b0,
+  0x0b273,0x06930,0x07337,0x06aa0,0x0ad50,0x14b55,0x04b60,0x0a570,0x054e4,0x0d160,
+  0x0e968,0x0d520,0x0daa0,0x16aa6,0x056d0,0x04ae0,0x0a9d4,0x0a2d0,0x0d150,0x0f252,
+  0x0d520
+];
+const LUNAR_MONTH = ['正','二','三','四','五','六','七','八','九','十','冬','腊'];
+const LUNAR_DAY = ['初一','初二','初三','初四','初五','初六','初七','初八','初九','初十','十一','十二','十三','十四','十五','十六','十七','十八','十九','二十','廿一','廿二','廿三','廿四','廿五','廿六','廿七','廿八','廿九','三十'];
+function lunarYearDays(y) {
+  let sum = 348;
+  for (let i = 0x8000; i > 0x8; i >>= 1) sum += (LUNAR_INFO[y - 1900] & i) ? 1 : 0;
+  return sum + leapMonthDays(y);
+}
+function leapMonthDays(y) {
+  if (leapMonth(y)) {
+    // 闰月天数取决于该年信息是否含闰月大小标记
+    return (LUNAR_INFO[y - 1900] & 0x10000) ? 30 : 29;
+  }
+  return 0;
+}
+function leapMonth(y) { return LUNAR_INFO[y - 1900] & 0xf; }
+function lunarMonthDays(y, m) {
+  return (LUNAR_INFO[y - 1900] & (0x10000 >> m)) ? 30 : 29;
+}
+// 阳历 -> {ly, lm, ld, isLeap, lStr}
+function solarToLunar(y, m, d) {
+  const baseDate = Date.UTC(1900, 0, 31);
+  const objDate = Date.UTC(y, m - 1, d);
+  let offset = Math.round((objDate - baseDate) / 86400000);
+  let temp = 0, ly = 1900;
+  for (ly = 1900; ly < 2101 && offset > 0; ly++) { temp = lunarYearDays(ly); offset -= temp; }
+  if (offset < 0) { offset += temp; ly--; }
+  const leap = leapMonth(ly);
+  let isLeap = false, lm;
+  for (lm = 1; lm <= 12 && offset > 0; lm++) {
+    let dm = lunarMonthDays(ly, lm);
+    if (leap > 0 && lm === leap + 1 && !isLeap) {
+      // 进入闰月
+      isLeap = true; dm = leapMonthDays(ly); lm--;
+    } else {
+      isLeap = false;
+    }
+    offset -= dm;
+  }
+  if (offset === 0 && leap > 0 && lm === leap + 1) {
+    if (isLeap) { isLeap = false; } else { isLeap = true; lm--; }
+  }
+  if (offset < 0) { offset += dm; lm--; }
+  const ld = offset + 1;
+  const lStr = (isLeap ? '闰' : '') + LUNAR_MONTH[lm - 1] + '月' + LUNAR_DAY[ld - 1];
+  return { ly, lm, ld, isLeap, lStr };
+}
+// 将农历（年,月,日）转换为对应阳历日期字符串（用于倒计时）
+function lunarToSolar(ly, lm, ld, isLeap) {
+  const baseDate = Date.UTC(1900, 0, 31);
+  let offset = 0;
+  for (let y = 1900; y < ly; y++) offset += lunarYearDays(y);
+  const leap = leapMonth(ly);
+  let month = 1;
+  for (month = 1; month < lm; month++) {
+    offset += lunarMonthDays(ly, month);
+    if (leap > 0 && month === leap) offset += leapMonthDays(ly);
+  }
+  if (isLeap && leap > 0 && lm === leap + 1) offset += lunarMonthDays(ly, leap);
+  offset += ld - 1;
+  const d = new Date(baseDate + offset * 86400000);
+  return fmtDate(d);
+}
+
 // ====== 纪念日模块 ======
 function saveAnniv() {
   const name = document.getElementById('annivName').value.trim();
   const date = document.getElementById('annivDate').value;
   const type = document.getElementById('annivType').value;
+  const cal = document.getElementById('annivCal').value;
   if (!name) { alert('请输入名称'); return; }
   if (!date) { alert('请选择日期'); return; }
-  annivs.push({ name, date, type, ts: Date.now() });
+  annivs.push({ name, date, type, cal, ts: Date.now() });
   saveAnnivs();
   document.getElementById('annivName').value = '';
   document.getElementById('annivDate').value = '';
@@ -1097,6 +1278,21 @@ function deleteAnniv(ts) {
   renderAnniv();
 }
 
+// 返回当年（或明年）对应的阳历日历日：农历按农历月日换算到阳历
+function anniversarySolarDate(a) {
+  const target = parseDate(a.date);
+  const year = new Date().getFullYear();
+  let solar;
+  if (a.cal === 'lunar') {
+    const lm = target.getMonth() + 1;
+    const ld = target.getDate();
+    solar = lunarToSolar(year, lm, ld, false);
+  } else {
+    solar = `${year}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+  }
+  return solar;
+}
+
 function getAnnivInfo(a) {
   const today = todayStr();
   const target = parseDate(a.date);
@@ -1108,11 +1304,30 @@ function getAnnivInfo(a) {
     const days = daysBetween(today, a.date);
     return { days, label: days >= 0 ? '天后' : '天前', past: days < 0 };
   }
+  if (a.type === 'birthday') {
+    // 生日：当年/明年最近一次生日（已过的算明年）
+    const year = new Date().getFullYear();
+    let solar = anniversarySolarDate(a);
+    let bd = parseDate(solar);
+    const t0 = new Date(today + 'T00:00:00');
+    if (bd < t0) {
+      // 明年生日
+      if (a.cal === 'lunar') solar = lunarToSolar(year + 1, target.getMonth() + 1, target.getDate(), false);
+      else solar = `${year+1}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+      bd = parseDate(solar);
+    }
+    const days = Math.round((bd - t0) / 86400000);
+    const age = bd.getFullYear() - target.getFullYear();
+    return { days, label: '天后', past: false, age, isBirthday: true, birthYear: target.getFullYear(), displaySolar: solar };
+  }
   // anniversary: 计算今年/明年的纪念日
   const year = new Date().getFullYear();
-  let thisYear = new Date(year, target.getMonth(), target.getDate());
+  let solar = anniversarySolarDate(a);
+  let thisYear = parseDate(solar);
   if (thisYear < new Date(today + 'T00:00:00')) {
-    thisYear = new Date(year + 1, target.getMonth(), target.getDate());
+    if (a.cal === 'lunar') solar = lunarToSolar(year + 1, target.getMonth() + 1, target.getDate(), false);
+    else solar = `${year+1}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
+    thisYear = parseDate(solar);
   }
   const days = Math.round((thisYear - new Date(today + 'T00:00:00')) / 86400000);
   const age = year - target.getFullYear() - (thisYear.getFullYear() === year + 1 ? 1 : 0);
@@ -1122,6 +1337,7 @@ function getAnnivInfo(a) {
 function renderAnniv() {
   const list = document.getElementById('annivList');
   const empty = document.getElementById('annivEmpty');
+  renderBirthdayBoard(); // 同步生日卡片
   if (annivs.length === 0) {
     list.innerHTML = '';
     empty.style.display = 'block';
@@ -1137,14 +1353,16 @@ function renderAnniv() {
   });
 
   list.innerHTML = sorted.map(({ a, info }) => {
-    const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起' };
+    const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起', birthday: '生日' };
+    const calLabel = a.cal === 'lunar' ? '（农历）' : '';
     let ageStr = '';
     if (info.isAnniversary && info.age !== undefined) ageStr = `<span style="font-size:11px;color:var(--text-light)">第${info.age}个</span>`;
+    if (info.isBirthday && info.age !== undefined) ageStr = `<span style="font-size:11px;color:var(--text-light)">${info.age}岁</span>`;
     if (info.isTogether) ageStr = '';
     return `<div class="anniv-item">
       <div class="anniv-info">
         <div class="anniv-name">${a.name}</div>
-        <div class="anniv-date">${cnDate(a.date)} · ${typeLabels[a.type]}</div>
+        <div class="anniv-date">${cnDate(a.date)}${calLabel} · ${typeLabels[a.type]}</div>
       </div>
       <div class="anniv-countdown">
         <div class="anniv-days ${info.past ? 'past' : ''}">${info.days}</div>
@@ -1156,6 +1374,48 @@ function renderAnniv() {
   }).join('');
 }
 
+function renderBirthdayBoard() {
+  const tbody = document.getElementById('birthdayBody');
+  const empty = document.getElementById('birthdayEmpty');
+  if (!tbody) return;
+  const bdays = annivs
+    .filter(a => a.type === 'birthday')
+    .map(a => ({ a, info: getAnnivInfo(a) }))
+    .sort((x, y) => x.info.days - y.info.days);
+  if (bdays.length === 0) {
+    tbody.innerHTML = ''; empty.style.display = 'block';
+  } else {
+    empty.style.display = 'none';
+    tbody.innerHTML = bdays.map(({ a, info }) => `<tr>
+      <td style="color:var(--primary);font-weight:700;">${info.days}天</td>
+      <td>${a.name}</td>
+      <td style="text-align:center;">${info.age}岁</td>
+      <td style="text-align:center;">${info.birthYear}年</td>
+    </tr>`).join('');
+  }
+}
+
+
+// ====== 每周首次打开弹窗 ======
+const KEY_WEEKLY_POPUP = 'dr_weekly_popup_v1';
+function getISOWeekKey(d) {
+  // 以「本周一」的日期作为周标识，保证同一自然周只弹一次
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = (date.getDay() + 6) % 7; // 周一=0
+  date.setDate(date.getDate() - day);
+  return `w${fmtDate(date)}`;
+}
+function closeWeeklyModal() {
+  document.getElementById('weeklyModal').style.display = 'none';
+}
+function checkWeeklyPopup() {
+  let last = '';
+  try { last = localStorage.getItem(KEY_WEEKLY_POPUP) || ''; } catch (e) {}
+  const wk = getISOWeekKey(new Date());
+  if (last === wk) return; // 本周已弹过
+  try { localStorage.setItem(KEY_WEEKLY_POPUP, wk); } catch (e) {}
+  document.getElementById('weeklyModal').style.display = 'flex';
+}
 
 // ====== 初始化 ======
 function init() {
@@ -1163,8 +1423,8 @@ function init() {
   const d = new Date();
   const weekdays = ['日','一','二','三','四','五','六'];
   document.getElementById('topDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
-  document.getElementById('topTitle').textContent = PAGE_TITLES['period'];
-  document.title = PAGE_TITLES['period'] + '记录台';
+  document.getElementById('topTitle').textContent = PAGE_TITLES['weight'];
+  document.title = PAGE_TITLES['weight'] + '记录台';
 
   // 默认日期填入今天
   document.getElementById('weightDate').value = todayStr();
@@ -1173,7 +1433,10 @@ function init() {
   if (periodStartEl) periodStartEl.value = todayStr();
   initDietAutocomplete();
 
+  renderWeight();
   renderPeriod();
+  renderAnniv();
+  checkWeeklyPopup();
 }
 
 init();
