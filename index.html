@@ -440,12 +440,14 @@
     <div class="card">
       <div class="card-title"><span class="icon">🌸</span>记录经期</div>
       <div class="days-left" id="periodDaysLeft"></div>
-      <div class="next-predict" id="periodNextLine"></div>
       <div class="form-row">
         <label>开始日期</label>
         <input type="date" id="periodStart" lang="zh-CN">
       </div>
-      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">保存经期</button>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button class="btn btn-pink" onclick="savePeriod()" style="flex:1;">保存经期</button>
+        <span class="next-predict" id="periodNextLine" style="text-align:right;white-space:nowrap;"></span>
+      </div>
     </div>
 
     <!-- 经期日历 -->
@@ -539,7 +541,7 @@
 
     <!-- 纪念日列表 -->
     <div class="card">
-      <div class="card-title"><span class="icon">💌</span>纪念日列表（可删除）</div>
+      <div class="card-title"><span class="icon">💌</span>纪念日列表</div>
       <div id="annivList"></div>
       <div id="annivEmpty" class="empty-tip">暂无纪念日</div>
     </div>
@@ -1305,10 +1307,11 @@ function saveAnniv() {
   if (!name) { alert('请输入名称'); return; }
   let date = '', lm = null, ld = null, lunarText = '';
   if (cal === 'lunar') {
-    const ly = parseInt(document.getElementById('lunarYear').value, 10);
+    const lyRaw = document.getElementById('lunarYear').value.trim();
+    const ly = lyRaw ? parseInt(lyRaw, 10) : new Date().getFullYear();
     lm = parseInt(document.getElementById('lunarMonth').value, 10);
     ld = parseInt(document.getElementById('lunarDay').value, 10);
-    if (!ly || !lm || !ld) { alert('请填写完整农历日期'); return; }
+    if (!lm || !ld) { alert('请填写完整农历日期（月、日）'); return; }
     const solar = lunarToSolar(ly, lm, ld, false);
     date = solar;
     lunarText = `${ly}年${LUNAR_MONTH[lm-1]}月${LUNAR_DAY[ld-1]}`;
@@ -1396,10 +1399,11 @@ function renderAnniv() {
   }
   empty.style.display = 'none';
 
-  // 排序：按倒计时升序（已过的放后面）
+  // 排序：按年龄从小到大（有年龄的在前，无年龄的排后面）
   const sorted = annivs.map(a => ({ a, info: getAnnivInfo(a) })).sort((x, y) => {
-    if (x.info.past && !y.info.past) return 1;
-    if (!x.info.past && y.info.past) return -1;
+    const xa = (typeof x.info.age === 'number') ? x.info.age : Infinity;
+    const ya = (typeof y.info.age === 'number') ? y.info.age : Infinity;
+    if (xa !== ya) return xa - ya;
     return x.info.days - y.info.days;
   });
 
