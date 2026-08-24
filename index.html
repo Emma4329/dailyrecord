@@ -281,23 +281,23 @@
     border-radius: 8px;
   }
   .hist-scroll table, .diet-scroll table { min-width: 420px; }
-  #birthdayTable { table-layout: fixed; width: 100%; }
+  #birthdayTable { table-layout: fixed; width: 192px; min-width: 0; }
   #birthdayTable thead th, #birthdayBody td { text-align: center; vertical-align: middle; }
-  /* 2:2:2:4.5 字宽比例 */
-  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 23%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 18%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 25%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 34%; white-space: normal; word-break: break-all; }
+  /* 字宽固定 px：还有几天2字=32 名称3字=48 今年岁数3字=48 出生日期4字=64 */
+  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 32px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 48px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 48px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  .anniv-list-table { table-layout: fixed; width: 100%; border-collapse: collapse; min-width: 420px; }
+  .anniv-list-table { table-layout: fixed; width: 208px; min-width: 0; border-collapse: collapse; }
   .anniv-list-table th, .anniv-list-table td { border-bottom: 1px solid var(--border); padding: 10px 4px; font-size: 12px; text-align: center; vertical-align: middle; }
   .anniv-list-table thead th { color: var(--text-light); font-weight: 600; background: var(--bg); }
-  /* 列宽：名称2 / 日期4 / 类型2 / 距今天数3 / 删除2 (总13) */
-  .anniv-list-table th:nth-child(1), .anniv-list-table td:nth-child(1) { width: 7%; white-space: normal; word-break: break-all; }
-  .anniv-list-table th:nth-child(2), .anniv-list-table td:nth-child(2) { width: 19%; white-space: normal; word-break: break-all; }
-  .anniv-list-table th:nth-child(3), .anniv-list-table td:nth-child(3) { width: 3%; }
-  .anniv-list-table th:nth-child(4), .anniv-list-table td:nth-child(4) { width: 9%; white-space: normal; }
-  .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 13%; }
+  /* 字宽固定 px：名称3字=48 日期4字=64 类型1.5字=24 距今天数3字=48 删除1.5字=24 */
+  .anniv-list-table th:nth-child(1), .anniv-list-table td:nth-child(1) { width: 48px; white-space: normal; word-break: break-all; }
+  .anniv-list-table th:nth-child(2), .anniv-list-table td:nth-child(2) { width: 64px; white-space: normal; word-break: break-all; }
+  .anniv-list-table th:nth-child(3), .anniv-list-table td:nth-child(3) { width: 24px; }
+  .anniv-list-table th:nth-child(4), .anniv-list-table td:nth-child(4) { width: 48px; white-space: normal; }
+  .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 24px; }
   .anniv-list-table .btn-danger { padding: 4px 8px; font-size: 11px; }
 
   .weekly-modal-mask {
