@@ -198,10 +198,54 @@
   .diet-suggest .diet-opt:last-child { border-bottom: none; }
   .diet-suggest .diet-opt:hover { background: var(--bg); }
   #page-weight thead th, #weightTableBody td { white-space: nowrap; }
-  #weightTableBody td:nth-child(1), #page-weight thead th:nth-child(1) { white-space: normal; width: 62px; vertical-align: top; text-align: left; }
+  #weightTableBody td:nth-child(2), #page-weight thead th:nth-child(2) { white-space: normal; width: 78px; vertical-align: top; text-align: left; }
   #weightTableBody td:nth-child(4), #page-weight thead th:nth-child(4) { white-space: normal; min-width: 120px; }
+  .weight-form-line { display: flex; gap: 10px; align-items: stretch; }
+  .weight-form-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .weight-form-col.date-col { flex: 1.6; }
+  .weight-form-col.weight-col { flex: 0.85; }
+  .weight-form-col input { height: 46px; padding: 0 10px; line-height: 46px; box-sizing: border-box; }
   .yr { font-size: 10px; color: var(--text-light); }
   .next-predict { font-size: 13px; color: var(--text-light); text-align: center; margin-bottom: 12px; }
+  .diet-board-table { table-layout: fixed; }
+  .diet-board-table th, .diet-board-table td { text-align: center; }
+  .diet-board-table th:nth-child(1), .diet-board-table th:nth-child(2), .diet-board-table td:nth-child(1), .diet-board-table td:nth-child(2) { width: 28%; }
+  .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(3) { width: 44%; }
+  .weight-scale-card {
+    text-align: center; padding: 18px 8px 16px;
+    background: linear-gradient(135deg, #2196F3, #03A9F4);
+    border-radius: 16px; color: #fff;
+  }
+  .scale-date { font-size: 14px; color: rgba(255,255,255,0.92); margin-bottom: 14px; }
+  .scale-main { display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .scale-circle {
+    width: 140px; height: 140px; border-radius: 50%;
+    border: 4px solid rgba(255,255,255,0.55);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.12);
+    flex-shrink: 0;
+  }
+  .scale-weight-row { display: flex; align-items: baseline; justify-content: center; gap: 3px; }
+  .scale-weight { font-size: 40px; font-weight: 700; color: #fff; line-height: 1; }
+  .scale-unit { font-size: 14px; color: rgba(255,255,255,0.9); }
+  .scale-side { flex: 1; min-width: 0; text-align: center; }
+  .scale-side-label { font-size: 11px; color: rgba(255,255,255,0.85); margin-bottom: 5px; }
+  .scale-side-value { font-size: 13px; font-weight: 700; color: #fff; }
+  .scale-score { margin-top: 8px; font-size: 12px; color: rgba(255,255,255,0.92); }
+  .scale-arrow { font-size: 10px; margin-right: 2px; }
+  .chart-popup {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: var(--shadow); padding: 12px 14px; margin-top: 8px;
+    font-size: 13px; color: var(--text); position: relative;
+  }
+  .chart-popup .pop-date { font-size: 12px; color: var(--text-light); margin-bottom: 6px; }
+  .chart-popup .pop-row { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+  .chart-popup .pop-label { color: var(--text-light); }
+  .chart-popup .pop-value { font-weight: 700; }
+  .chart-popup .pop-close {
+    position: absolute; top: 4px; right: 8px; font-size: 16px; color: var(--text-light);
+    cursor: pointer; line-height: 1;
+  }
   .section-divider { height: 1px; background: var(--border); margin: 14px 0; }
 
   .pill {
@@ -270,16 +314,20 @@
     <div class="card">
       <div class="card-title"><span class="icon">⚖️</span>记录体重</div>
       <div class="form-row">
-        <div style="display:flex; gap:10px;">
-          <div style="flex:1; min-width:0;">
+        <div class="weight-form-line">
+          <div class="weight-form-col date-col">
             <label>日期</label>
             <input type="date" id="weightDate" lang="zh-CN">
           </div>
-          <div style="flex:1; min-width:0;">
+          <div class="weight-form-col weight-col">
             <label>体重（kg）</label>
             <input type="number" id="weightVal" step="0.01" placeholder="如 55.50">
           </div>
         </div>
+      </div>
+      <div class="form-row">
+        <label>目标体重（kg）</label>
+        <input type="number" id="weightTarget" step="0.01" placeholder="设置目标后显示离目标还差">
       </div>
       <div class="form-row" style="position:relative;">
         <label>饮食（可选）</label>
@@ -289,33 +337,43 @@
       <button class="btn btn-primary" onclick="saveWeight()" style="width:100%;">保存记录</button>
     </div>
 
-    <!-- 体重统计 -->
+    <!-- 体重统计（圆形秤样式） -->
     <div class="card">
       <div class="card-title"><span class="icon">📈</span>体重统计</div>
-      <div class="stats">
-        <div class="stat-card info">
-          <div class="label">最新体重</div>
-          <div class="value" id="weightLatest">--<span class="unit">kg</span></div>
-        </div>
-        <div class="stat-card success">
-          <div class="label">7日总减重</div>
-          <div class="value" id="weightAvg7">--<span class="unit">斤</span></div>
-        </div>
-        <div class="stat-card warning">
-          <div class="label">30日总减重</div>
-          <div class="value" id="weightAvg30">--<span class="unit">斤</span></div>
-        </div>
-        <div class="stat-card pink">
-          <div class="label">变化趋势</div>
-          <div class="value" id="weightTrend" style="font-size:16px;">--</div>
+      <div class="weight-scale-card" id="weightScaleCard">
+        <div class="scale-date" id="scaleDate">--</div>
+        <div class="scale-main">
+          <div class="scale-side" id="scaleTargetDiff">
+            <div class="scale-side-label">离目标还差</div>
+            <div class="scale-side-value">--</div>
+          </div>
+          <div class="scale-circle">
+            <div class="scale-weight-row">
+              <span class="scale-weight" id="scaleWeight">--</span>
+              <span class="scale-unit">公斤</span>
+            </div>
+            <div class="scale-score" id="scaleScore">--</div>
+          </div>
+          <div class="scale-side" id="scaleLastDiff">
+            <div class="scale-side-label">比上次测量</div>
+            <div class="scale-side-value">--</div>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 体重趋势图 -->
     <div class="card">
-      <div class="card-title"><span class="icon">📉</span>体重趋势图（近30次）</div>
+      <div class="card-title">
+        <span class="icon">📉</span>体重趋势图
+        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftWeightChart(-1)">上月</button>
+          <span id="weightChartMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftWeightChart(1)">下月</button>
+        </span>
+      </div>
       <div class="weight-chart" id="weightChart" style="height:220px;"></div>
+      <div id="weightChartPopup" class="chart-popup" style="display:none;"></div>
     </div>
 
     <!-- 历史记录 -->
@@ -323,7 +381,7 @@
       <div class="card-title"><span class="icon">📜</span>历史记录</div>
       <div class="table-scroll">
         <table>
-          <thead><tr><th>日期</th><th>体重</th><th>变化</th><th>饮食</th><th></th></tr></thead>
+          <thead><tr><th>变化</th><th>日期</th><th>体重</th><th>饮食</th><th></th></tr></thead>
           <tbody id="weightTableBody"></tbody>
         </table>
       </div>
@@ -334,8 +392,8 @@
     <div class="card">
       <div class="card-title"><span class="icon">🏆</span>饮食掉秤榜</div>
       <div class="table-scroll">
-        <table>
-          <thead><tr><th>最高掉秤幅度</th><th>最低掉秤幅度</th><th>食物</th></tr></thead>
+        <table class="diet-board-table">
+          <thead><tr><th>最高幅度</th><th>最低幅度</th><th>食物</th></tr></thead>
           <tbody id="dietBoardBody"></tbody>
         </table>
       </div>
@@ -399,10 +457,12 @@ let periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
 let weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
 let annivs  = JSON.parse(localStorage.getItem(KEY_ANNIV)  || '[]');
 let dietHistory = JSON.parse(localStorage.getItem('dr_diet_v1') || '[]');
+let weightTarget = parseFloat(localStorage.getItem('dr_weight_target_v1')) || null;
 
 function savePeriods() { localStorage.setItem(KEY_PERIOD, JSON.stringify(periods)); }
 function saveWeights() { localStorage.setItem(KEY_WEIGHT, JSON.stringify(weights)); }
 function saveAnnivs()  { localStorage.setItem(KEY_ANNIV,  JSON.stringify(annivs)); }
+function saveWeightTarget() { localStorage.setItem('dr_weight_target_v1', weightTarget || ''); }
 
 // ====== 工具函数 ======
 function todayStr() {
@@ -418,8 +478,39 @@ function cnDate(s) {
   const d = parseDate(s);
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
 }
+function getRelativeDayLabel(dateStr) {
+  const d = daysBetween(dateStr, todayStr());
+  if (d === 0) return '今天';
+  if (d === 1) return '昨天';
+  if (d === -1) return '明天';
+  return cnDate(dateStr);
+}
+function calcWeightScore(current, target) {
+  if (!target || target <= 0 || weights.length < 2) return null;
+  const vals = weights.map(w => w.val);
+  const maxW = Math.max(...vals), minW = Math.min(...vals);
+  if (target < current) {
+    const denom = maxW - target;
+    if (denom <= 0) return null;
+    return Math.max(0, Math.min(100, Math.round((maxW - current) / denom * 100)));
+  }
+  if (target > current) {
+    const denom = target - minW;
+    if (denom <= 0) return null;
+    return Math.max(0, Math.min(100, Math.round((current - minW) / denom * 100)));
+  }
+  return 100;
+}
 function fmtDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function fmtKg(n, signed) {
+  if (n === null || n === undefined || isNaN(n)) return '--';
+  const s = Math.abs(n).toFixed(2).replace(/\.?0+$/, '');
+  if (n > 0 && signed) return '+' + s;
+  if (n < 0) return '-' + s;
+  return s;
 }
 
 // ====== 页面切换 ======
@@ -641,8 +732,15 @@ function saveWeight() {
   const date = document.getElementById('weightDate').value;
   const val = parseFloat(document.getElementById('weightVal').value);
   const note = document.getElementById('weightNote').value.trim();
+  const targetInput = document.getElementById('weightTarget').value.trim();
   if (!date) { alert('请选择日期'); return; }
   if (isNaN(val) || val <= 0 || val > 500) { alert('请输入合理的体重'); return; }
+
+  // 目标体重
+  if (targetInput) {
+    const t = parseFloat(targetInput);
+    if (!isNaN(t) && t > 0 && t <= 500) { weightTarget = t; saveWeightTarget(); }
+  }
 
   // 同一天覆盖
   const existing = weights.find(w => w.date === date);
@@ -678,40 +776,55 @@ function totalChangeJin(list) {
 }
 
 function renderWeight() {
-  // 统计
+  // 目标体重输入框回填
+  document.getElementById('weightTarget').value = weightTarget || '';
+
+  // 圆形秤统计卡
+  const scaleDate = document.getElementById('scaleDate');
+  const scaleWeight = document.getElementById('scaleWeight');
+  const scaleTargetDiff = document.querySelector('#scaleTargetDiff .scale-side-value');
+  const scaleLastDiff = document.querySelector('#scaleLastDiff .scale-side-value');
+  const scaleScore = document.getElementById('scaleScore');
+
   if (weights.length === 0) {
-    document.getElementById('weightLatest').textContent = '--';
-    document.getElementById('weightAvg7').textContent = '--';
-    document.getElementById('weightAvg30').textContent = '--';
-    document.getElementById('weightTrend').textContent = '--';
+    scaleDate.textContent = '--';
+    scaleWeight.textContent = '--';
+    scaleTargetDiff.innerHTML = '--';
+    scaleLastDiff.innerHTML = '--';
+    scaleScore.textContent = '得分:--';
   } else {
     const latest = weights[weights.length - 1];
-    document.getElementById('weightLatest').innerHTML = latest.val.toFixed(2) + '<span class="unit">kg</span>';
+    const prev = weights.length >= 2 ? weights[weights.length - 2] : null;
 
-    const today = new Date();
-    const sevenAgo = new Date(today); sevenAgo.setDate(sevenAgo.getDate() - 7);
-    const thirtyAgo = new Date(today); thirtyAgo.setDate(thirtyAgo.getDate() - 30);
+    scaleDate.textContent = getRelativeDayLabel(latest.date);
+    scaleWeight.textContent = fmtKg(latest.val);
 
-    const last7 = weights.filter(w => parseDate(w.date) >= sevenAgo);
-    const last30 = weights.filter(w => parseDate(w.date) >= thirtyAgo);
-
-    // 7日/30日总变化（斤）：区间末-初，1kg=2斤
-    document.getElementById('weightAvg7').innerHTML = totalChangeJin(last7);
-    document.getElementById('weightAvg30').innerHTML = totalChangeJin(last30);
-
-    // 趋势：最近 vs 前一次
-    if (weights.length >= 2) {
-      const diff = weights[weights.length-1].val - weights[weights.length-2].val;
-      const sign = diff > 0 ? '+' : '';
-      const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
-      document.getElementById('weightTrend').innerHTML = `<span style="color:${color}">${sign}${diff.toFixed(2)}kg</span>`;
+    // 离目标还差
+    if (weightTarget) {
+      const td = latest.val - weightTarget;
+      const color = td > 0 ? 'var(--text)' : 'var(--success)';
+      scaleTargetDiff.innerHTML = `<span style="color:${color}">${fmtKg(td, true)}公斤</span>`;
     } else {
-      document.getElementById('weightTrend').textContent = '--';
+      scaleTargetDiff.innerHTML = '<span style="font-size:11px;color:var(--text-light)">未设目标</span>';
     }
+
+    // 比上次测量
+    if (prev) {
+      const diff = latest.val - prev.val;
+      const arrow = diff < 0 ? '▼' : (diff > 0 ? '▲' : '');
+      const color = diff < 0 ? 'var(--success)' : (diff > 0 ? 'var(--danger)' : 'var(--text-light)');
+      scaleLastDiff.innerHTML = `<span style="color:${color}"><span class="scale-arrow">${arrow}</span>${fmtKg(diff, true)}公斤</span>`;
+    } else {
+      scaleLastDiff.innerHTML = '--';
+    }
+
+    // 得分
+    const score = calcWeightScore(latest.val, weightTarget);
+    scaleScore.textContent = score !== null ? `得分:${score}` : '得分:--';
   }
 
   // 图表
-  renderWeightChart('weightChart', weights.slice(-30));
+  renderWeightChartMonth('weightChart');
 
   // 历史表
   const tbody = document.getElementById('weightTableBody');
@@ -723,20 +836,19 @@ function renderWeight() {
     empty.style.display = 'none';
     const reversed = weights.slice().reverse();
     tbody.innerHTML = reversed.map((w, i) => {
-      const prev = reversed[i + 1];
+      const next = reversed[i - 1]; // 按时间顺序的下一天
       let change = '';
-      if (prev) {
-        const diff = w.val - prev.val;
-        const sign = diff > 0 ? '+' : '';
+      if (next) {
+        const diff = next.val - w.val; // 明日 - 今日
         const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
-        change = `<span style="color:${color}">${sign}${diff.toFixed(2)}kg</span>`;
+        change = `<span style="color:${color}">${fmtKg(diff, true)}kg</span>`;
       } else {
         change = '--';
       }
       return `<tr>
-        <td>${mdyDateBr(w.date)}</td>
-        <td><strong>${w.val.toFixed(2)}</strong> kg</td>
         <td>${change}</td>
+        <td>${mdyDateBr(w.date)}</td>
+        <td><strong>${fmtKg(w.val)}</strong> kg</td>
         <td style="font-size:11px;color:var(--text-light)">${w.note || ''}</td>
         <td><button class="btn btn-danger" onclick="deleteWeight(${w.ts})">删除</button></td>
       </tr>`;
@@ -748,20 +860,49 @@ function renderWeight() {
   renderDietLossBoard();
 }
 
-function renderWeightChart(id, data) {
+let chartYear, chartMonth;
+{
+  const d = new Date();
+  chartYear = d.getFullYear(); chartMonth = d.getMonth();
+}
+function shiftWeightChart(delta) {
+  chartMonth += delta;
+  if (chartMonth < 0) { chartMonth = 11; chartYear--; }
+  if (chartMonth > 11) { chartMonth = 0; chartYear++; }
+  renderWeightChartMonth('weightChart');
+}
+function showWeightPointPopup(date, val, change, food) {
+  const popup = document.getElementById('weightChartPopup');
+  const chHtml = change === null ? '--' : `<span style="color:${change < 0 ? 'var(--success)' : (change > 0 ? 'var(--danger)' : 'var(--text-light)')}">${fmtKg(change, true)}kg</span>`;
+  popup.innerHTML = `
+    <span class="pop-close" onclick="document.getElementById('weightChartPopup').style.display='none'">×</span>
+    <div class="pop-date">${cnDate(date)}</div>
+    <div class="pop-row"><span class="pop-label">体重</span><span class="pop-value">${fmtKg(val)}kg</span></div>
+    <div class="pop-row"><span class="pop-label">变化</span><span class="pop-value">${chHtml}</span></div>
+    <div class="pop-row"><span class="pop-label">饮食</span><span class="pop-value">${food || '—'}</span></div>
+  `;
+  popup.style.display = 'block';
+}
+function renderWeightChartMonth(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  if (data.length === 0) { el.innerHTML = '<div class="empty-tip" style="padding:20px;">暂无数据</div>'; return; }
-  if (data.length === 1) {
-    // 单点：画一条直线
-    data = data;
-  }
+  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+  document.getElementById('weightChartMonthLabel').textContent = `${chartYear}年${monthNames[chartMonth]}`;
+
+  // 筛选当月数据
+  const data = weights.filter(w => {
+    const d = parseDate(w.date);
+    return d.getFullYear() === chartYear && d.getMonth() === chartMonth;
+  }).sort((a, b) => a.date < b.date ? -1 : 1);
+
+  if (data.length === 0) { el.innerHTML = '<div class="empty-tip" style="padding:20px;">该月暂无数据</div>'; return; }
 
   const w = el.offsetWidth || 300;
   const h = el.offsetHeight || 180;
   const pad = { top: 20, right: 20, bottom: 30, left: 40 };
   const cw = w - pad.left - pad.right;
   const ch = h - pad.top - pad.bottom;
+  const daysInMonth = new Date(chartYear, chartMonth + 1, 0).getDate();
 
   const vals = data.map(d => d.val);
   let minV = Math.min(...vals), maxV = Math.max(...vals);
@@ -769,10 +910,19 @@ function renderWeightChart(id, data) {
   minV -= range * 0.2; maxV += range * 0.2;
   const span = maxV - minV;
 
-  const points = data.map((d, i) => {
-    const x = pad.left + (data.length === 1 ? cw / 2 : (i / (data.length - 1)) * cw);
+  // 为每个数据点计算下一天的变化
+  const allAsc = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
+  function nextChange(d) {
+    const idx = allAsc.findIndex(x => x.date === d.date && x.ts === d.ts);
+    if (idx >= 0 && idx < allAsc.length - 1) return allAsc[idx + 1].val - d.val;
+    return null;
+  }
+
+  const points = data.map(d => {
+    const day = parseDate(d.date).getDate();
+    const x = pad.left + ((day - 1) / (daysInMonth - 1)) * cw;
     const y = pad.top + ch - ((d.val - minV) / span) * ch;
-    return { x, y, val: d.val, date: d.date };
+    return { x, y, val: d.val, date: d.date, food: d.note, ts: d.ts };
   });
 
   const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
@@ -784,22 +934,22 @@ function renderWeightChart(id, data) {
     const v = minV + (span * i / 2);
     const y = pad.top + ch - (i / 2) * ch;
     yTicks += `<line x1="${pad.left}" y1="${y}" x2="${w-pad.right}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
-    yTicks += `<text x="${pad.left-6}" y="${y+3}" font-size="9" fill="var(--text-light)" text-anchor="end">${v.toFixed(2)}</text>`;
+    yTicks += `<text x="${pad.left-6}" y="${y+3}" font-size="9" fill="var(--text-light)" text-anchor="end">${fmtKg(v)}</text>`;
   }
 
-  // X 轴标签
+  // X 轴标签（每5天显示一个）
   let xLabels = '';
-  const labelStep = Math.max(1, Math.floor(data.length / 5));
-  data.forEach((d, i) => {
-    if (i % labelStep === 0 || i === data.length - 1) {
-      const x = pad.left + (data.length === 1 ? cw/2 : (i/(data.length-1))*cw);
-      const dt = parseDate(d.date);
-      const lbl = `${dt.getMonth()+1}/${dt.getDate()}`;
-      xLabels += `<text x="${x}" y="${h-8}" font-size="9" fill="var(--text-light)" text-anchor="middle">${lbl}</text>`;
-    }
-  });
+  for (let day = 1; day <= daysInMonth; day += 5) {
+    const x = pad.left + ((day - 1) / (daysInMonth - 1)) * cw;
+    xLabels += `<text x="${x}" y="${h-8}" font-size="9" fill="var(--text-light)" text-anchor="middle">${day}日</text>`;
+  }
 
-  const dots = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="3" fill="var(--info)"/>`).join('');
+  const dots = points.map(p => {
+    const ch = nextChange(p);
+    const safeDate = p.date.replace(/'/g, "\\'");
+    const safeFood = (p.food || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    return `<circle cx="${p.x}" cy="${p.y}" r="4" fill="var(--info)" style="cursor:pointer;" onclick="showWeightPointPopup('${safeDate}', ${p.val}, ${ch === null ? 'null' : ch}, '${safeFood}')"/>`;
+  }).join('');
 
   el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
     <defs><linearGradient id="grad-${id}" x1="0" y1="0" x2="0" y2="1">
@@ -864,8 +1014,8 @@ function renderDietLossBoard() {
   } else {
     empty.style.display = 'none';
     tbody.innerHTML = rows.map(r => `<tr>
-      <td style="color:var(--success);font-weight:700;white-space:nowrap;">${r.max.toFixed(2)}kg</td>
-      <td style="color:var(--warning);white-space:nowrap;">${r.min.toFixed(2)}kg</td>
+      <td style="color:var(--success);font-weight:700;white-space:nowrap;">${fmtKg(r.max)}kg</td>
+      <td style="color:var(--warning);white-space:nowrap;">${fmtKg(r.min)}kg</td>
       <td style="white-space:normal;min-width:120px;">${r.food}</td>
     </tr>`).join('');
   }
@@ -985,6 +1135,7 @@ function init() {
   // 默认日期填入今天
   document.getElementById('weightDate').value = todayStr();
   document.getElementById('annivDate').value = todayStr();
+  document.getElementById('weightTarget').value = weightTarget || '';
   initDietAutocomplete();
 
   renderPeriod();
