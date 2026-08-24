@@ -544,10 +544,11 @@
 <!-- 每周首次打开弹窗 -->
 <div class="weekly-modal-mask" id="weeklyModal" style="display:none;">
   <div class="weekly-modal">
-    <div class="wm-icon">👋</div>
+    <div class="wm-icon">📤</div>
     <div class="wm-title">本周记录台</div>
-    <div class="wm-text" id="weeklyModalText">新的一周，记得记录体重、经期和纪念日哦～</div>
-    <button class="btn btn-primary wm-btn" onclick="closeWeeklyModal()">知道了</button>
+    <div class="wm-text" id="weeklyModalText">新的一周开始了，建议先把本周的数据导出备份一下，避免丢失～</div>
+    <button class="btn btn-primary wm-btn" onclick="exportAllData()">导出数据</button>
+    <button class="btn btn-outline wm-btn" style="margin-top:10px;" onclick="closeWeeklyModal()">暂不需要</button>
   </div>
 </div>
 
@@ -1407,6 +1408,26 @@ function getISOWeekKey(d) {
 }
 function closeWeeklyModal() {
   document.getElementById('weeklyModal').style.display = 'none';
+}
+// 导出全部记录数据为 JSON 文件
+function exportAllData() {
+  const data = {};
+  const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1'];
+  keys.forEach(k => {
+    try { data[k] = JSON.parse(localStorage.getItem(k) || '[]'); } catch (e) { data[k] = []; }
+  });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url;
+  a.download = `记录平台数据_${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  closeWeeklyModal();
 }
 function checkWeeklyPopup() {
   let last = '';
