@@ -220,11 +220,13 @@
   #weightHistoryTable thead th, #weightTableBody td { white-space: nowrap; }
   #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 84px; min-width: 74px; vertical-align: top; text-align: left; }
   #weightTableBody td:nth-child(3), #weightHistoryTable thead th:nth-child(3) { white-space: nowrap; width: 64px; min-width: 56px; }
-  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 120px; }
+  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 90px; }
+  #weightTableBody td:nth-child(5), #weightHistoryTable thead th:nth-child(5) { white-space: normal; min-width: 48px; width: 56px; }
   .weight-form-line { display: flex; gap: 10px; align-items: stretch; }
   .weight-form-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
   .weight-form-col.date-col { flex: 1.6; }
   .weight-form-col.weight-col { flex: 0.7; }
+  .weight-form-col.date-col input { width: 128px; max-width: 128px; flex: none; }
   .weight-form-col input { height: 46px; padding: 0 10px; line-height: 46px; box-sizing: border-box; }
   .weight-col input { text-align: right; }
   .yr { font-size: 10px; color: var(--text-light); }
@@ -232,9 +234,10 @@
   .diet-board-table { table-layout: fixed; width: 100%; min-width: 0; }
   .diet-board-table th, .diet-board-table td { text-align: center; }
   .diet-board-table td { vertical-align: middle; }
-  .diet-board-table th:nth-child(1), .diet-board-table td:nth-child(1) { width: 34px; }
-  .diet-board-table th:nth-child(2), .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(2), .diet-board-table td:nth-child(3) { width: 52px; }
+  .diet-board-table th:nth-child(1), .diet-board-table td:nth-child(1) { width: 30px; }
+  .diet-board-table th:nth-child(2), .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(2), .diet-board-table td:nth-child(3) { width: 48px; }
   .diet-board-table th:nth-child(4), .diet-board-table td:nth-child(4) { width: auto; }
+  .diet-board-table th:nth-child(5), .diet-board-table td:nth-child(5) { width: 56px; }
   .weight-scale-card {
     text-align: center; padding: 18px 8px 16px;
     background: linear-gradient(135deg, #2196F3, #03A9F4);
@@ -289,61 +292,8 @@
 <!-- ====== 主区域 ====== -->
 <div class="main">
 
-  <!-- ========== 经期记录 ========== -->
-  <div class="page active" id="page-period">
-    <div class="card">
-      <div class="card-title"><span class="icon">🌸</span>记录经期</div>
-      <div class="days-left" id="periodDaysLeft"></div>
-      <div class="next-predict" id="periodNextLine"></div>
-      <div class="form-row">
-        <label>开始日期</label>
-        <input type="date" id="periodStart" lang="zh-CN">
-      </div>
-      <div class="form-row">
-        <label>结束日期（可选）</label>
-        <input type="date" id="periodEnd" lang="zh-CN">
-      </div>
-      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">保存经期</button>
-    </div>
-
-    <!-- 经期日历 -->
-    <div class="card">
-      <div class="card-title">
-        <span class="icon">📅</span>经期日历
-        <span style="margin-left:auto; display:flex; gap:6px;">
-          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftCalendar(-1)">上月</button>
-          <span id="calMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
-          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftCalendar(1)">下月</button>
-        </span>
-      </div>
-      <div class="period-cal" id="periodCal"></div>
-      <div class="hint">
-        <span style="display:inline-block;width:10px;height:10px;background:var(--pink);border-radius:50%;vertical-align:middle;"></span> 实际经期
-        <span style="display:inline-block;width:10px;height:10px;background:var(--pink-light);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 预测经期
-        <span style="display:inline-block;width:10px;height:10px;background:transparent;border:2px solid var(--pink);border-radius:50%;vertical-align:middle;margin-left:8px;box-sizing:border-box;"></span> 排卵日
-        <span style="display:inline-block;width:10px;height:10px;background:#D8F0DC;border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 易孕期
-        <span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 今天
-      </div>
-    </div>
-
-    <!-- 历史记录 -->
-    <div class="card">
-      <div class="card-title">
-        <span class="icon">📜</span>历史记录
-        <span id="periodAvgCycleInline" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--text-light);"></span>
-      </div>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>开始日期</th><th>距离上次</th><th></th></tr></thead>
-          <tbody id="periodTableBody"></tbody>
-        </table>
-      </div>
-      <div id="periodEmpty" class="empty-tip">暂无经期记录</div>
-    </div>
-  </div>
-
   <!-- ========== 体重记录 ========== -->
-  <div class="page" id="page-weight">
+  <div class="page active" id="page-weight">
     <div class="card">
       <div class="card-title"><span class="icon">⚖️</span>记录体重</div>
       <div class="form-row">
@@ -362,6 +312,15 @@
         <label>饮食（可选）</label>
         <input type="text" id="weightNote" placeholder="如早餐鸡蛋牛奶、午餐沙拉" autocomplete="off">
         <div id="dietSuggest" class="diet-suggest" style="display:none;"></div>
+      </div>
+      <div class="form-row">
+        <label>饱腹感（可选）</label>
+        <select id="weightFull">
+          <option value="">不填</option>
+          <option value="整天饱">整天饱</option>
+          <option value="半饱（7分）">半饱（7分）</option>
+          <option value="饿">饿</option>
+        </select>
       </div>
       <button class="btn btn-primary" onclick="saveWeight()" style="width:100%;">保存记录</button>
     </div>
@@ -411,7 +370,7 @@
       <div class="card-title"><span class="icon">📜</span>历史记录</div>
         <div class="table-scroll">
           <table id="weightHistoryTable">
-            <thead><tr><th>减幅</th><th>日期</th><th>体重</th><th>饮食</th><th></th><th></th></tr></thead>
+            <thead><tr><th>减幅</th><th>日期</th><th>体重</th><th>饮食</th><th>饱腹感</th><th></th><th></th></tr></thead>
             <tbody id="weightTableBody"></tbody>
           </table>
         </div>
@@ -423,11 +382,60 @@
       <div class="card-title"><span class="icon">🏆</span>饮食掉秤榜</div>
       <div class="table-scroll">
         <table class="diet-board-table">
-          <thead><tr><th>#</th><th>最高幅度</th><th>最低幅度</th><th>食物</th></tr></thead>
+          <thead><tr><th>#</th><th>最高幅度</th><th>最低幅度</th><th>食物</th><th>饱腹感</th></tr></thead>
           <tbody id="dietBoardBody"></tbody>
         </table>
       </div>
       <div id="dietBoardEmpty" class="empty-tip">暂无掉秤记录</div>
+    </div>
+  </div>
+
+  <!-- ========== 经期记录 ========== -->
+  <div class="page" id="page-period">
+    <div class="card">
+      <div class="card-title"><span class="icon">🌸</span>记录经期</div>
+      <div class="days-left" id="periodDaysLeft"></div>
+      <div class="next-predict" id="periodNextLine"></div>
+      <div class="form-row">
+        <label>开始日期</label>
+        <input type="date" id="periodStart" lang="zh-CN">
+      </div>
+      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">保存经期</button>
+    </div>
+
+    <!-- 经期日历 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">📅</span>经期日历
+        <span style="margin-left:auto; display:flex; gap:6px;">
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftCalendar(-1)">上月</button>
+          <span id="calMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
+          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftCalendar(1)">下月</button>
+        </span>
+      </div>
+      <div class="period-cal" id="periodCal"></div>
+      <div class="hint">
+        <span style="display:inline-block;width:10px;height:10px;background:var(--pink);border-radius:50%;vertical-align:middle;"></span> 实际经期
+        <span style="display:inline-block;width:10px;height:10px;background:var(--pink-light);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 预测经期
+        <span style="display:inline-block;width:10px;height:10px;background:transparent;border:2px solid var(--pink);border-radius:50%;vertical-align:middle;margin-left:8px;box-sizing:border-box;"></span> 排卵日
+        <span style="display:inline-block;width:10px;height:10px;background:#D8F0DC;border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 易孕期
+        <span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 今天
+      </div>
+    </div>
+
+    <!-- 历史记录 -->
+    <div class="card">
+      <div class="card-title">
+        <span class="icon">📜</span>历史记录
+        <span id="periodAvgCycleInline" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--text-light);"></span>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>开始日期</th><th>距离上次</th><th></th><th></th></tr></thead>
+          <tbody id="periodTableBody"></tbody>
+        </table>
+      </div>
+      <div id="periodEmpty" class="empty-tip">暂无经期记录</div>
     </div>
   </div>
 
@@ -466,11 +474,11 @@
 
 <!-- ====== 底部导航 ====== -->
 <div class="sidebar">
-  <div class="nav-item active" data-page="period" onclick="switchPage('period')">
-    <span class="nav-icon period">🌸</span><span>经期</span>
-  </div>
-  <div class="nav-item" data-page="weight" onclick="switchPage('weight')">
+  <div class="nav-item active" data-page="weight" onclick="switchPage('weight')">
     <span class="nav-icon weight">⚖️</span><span>体重</span>
+  </div>
+  <div class="nav-item" data-page="period" onclick="switchPage('period')">
+    <span class="nav-icon period">🌸</span><span>经期</span>
   </div>
   <div class="nav-item" data-page="anniv" onclick="switchPage('anniv')">
     <span class="nav-icon anniv">🎉</span><span>纪念日</span>
@@ -560,9 +568,7 @@ function switchPage(name) {
 // ====== 经期模块 ======
 function savePeriod() {
   const start = document.getElementById('periodStart').value || todayStr();
-  let end = document.getElementById('periodEnd').value || null;
-  if (end && end < start) end = start; // 防错：结束不早于开始
-  periods.push({ start, end, flow: 'normal', note: '', ts: Date.now() });
+  periods.push({ start, end: null, flow: 'normal', note: '', ts: Date.now() });
   periods.sort((a,b) => a.start < b.start ? -1 : 1);
   savePeriods();
   renderPeriod();
@@ -581,7 +587,6 @@ function editPeriod(ts) {
   const p = periods.find(x => x.ts === ts);
   if (!p) return;
   document.getElementById('periodStart').value = p.start;
-  document.getElementById('periodEnd').value = p.end || '';
   // 覆盖式保存：先移除旧记录，保存时以新 ts 写入
   periods = periods.filter(x => x.ts !== ts);
   savePeriods();
@@ -777,21 +782,23 @@ function saveWeight() {
   const date = document.getElementById('weightDate').value;
   const val = parseFloat(document.getElementById('weightVal').value);
   const note = document.getElementById('weightNote').value.trim();
+  const fullness = document.getElementById('weightFull').value;
   if (!date) { alert('请选择日期'); return; }
   if (isNaN(val) || val <= 0 || val > 500) { alert('请输入合理的体重'); return; }
 
   // 同一天覆盖
   const existing = weights.find(w => w.date === date);
   if (existing) {
-    existing.val = val; existing.note = note; existing.ts = Date.now();
+    existing.val = val; existing.note = note; existing.fullness = fullness; existing.ts = Date.now();
   } else {
-    weights.push({ date, val, note, ts: Date.now() });
+    weights.push({ date, val, note, fullness, ts: Date.now() });
   }
   weights.sort((a,b) => a.date < b.date ? -1 : 1);
   saveWeights();
   document.getElementById('weightDate').value = '';
   document.getElementById('weightVal').value = '';
   document.getElementById('weightNote').value = '';
+  document.getElementById('weightFull').value = '';
   renderWeight();
   alert('已保存');
 }
@@ -810,6 +817,7 @@ function editWeight(ts) {
   document.getElementById('weightDate').value = w.date;
   document.getElementById('weightVal').value = w.val;
   document.getElementById('weightNote').value = w.note || '';
+  document.getElementById('weightFull').value = w.fullness || '';
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -883,6 +891,7 @@ function renderWeight() {
         <td>${mdyDateBr(w.date)}</td>
         <td><strong>${fmtKg(w.val)}</strong> kg</td>
         <td style="font-size:11px;color:var(--text-light)">${w.note || ''}</td>
+        <td style="font-size:11px;color:var(--text-light);white-space:normal;">${w.fullness || '—'}</td>
         <td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="editWeight(${w.ts})">修改</button></td>
         <td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteWeight(${w.ts})">删除</button></td>
       </tr>`;
@@ -905,7 +914,7 @@ function shiftWeightChart(delta) {
   if (chartMonth > 11) { chartMonth = 0; chartYear++; }
   renderWeightChartMonth('weightChart');
 }
-function showWeightPointPopup(date, val, change, food) {
+function showWeightPointPopup(date, val, change, food, fullness) {
   const popup = document.getElementById('weightChartPopup');
   // 复位选中：移除旧的 selected 高亮
   document.querySelectorAll('#weightChart .wday.selected').forEach(c => c.classList.remove('selected'));
@@ -918,6 +927,7 @@ function showWeightPointPopup(date, val, change, food) {
     <div class="pop-row"><span class="pop-label">减幅</span><span class="pop-value">${chHtml}</span></div>
     <div class="pop-row"><span class="pop-label">体重</span><span class="pop-value">${fmtKg(val)}kg</span></div>
     <div class="pop-row"><span class="pop-label">饮食</span><span class="pop-value">${food || '—'}</span></div>
+    <div class="pop-row"><span class="pop-label">饱腹感</span><span class="pop-value">${fullness || '—'}</span></div>
   `;
   popup.style.display = 'block';
 }
@@ -963,7 +973,8 @@ function renderWeightChartMonth(id) {
       const safeDate = rec.date.replace(/'/g, "\\'");
       const safeFood = (rec.note || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
       const ch = nextChange(rec);
-      inner += `<span class="wday-weight" onclick="showWeightPointPopup('${safeDate}', ${rec.val}, ${ch === null ? 'null' : ch}, '${safeFood}')">${fmtKg(rec.val)}</span>`;
+      const safeFull = (rec.fullness || '').replace(/'/g, "\\'");
+      inner += `<span class="wday-weight" onclick="showWeightPointPopup('${safeDate}', ${rec.val}, ${ch === null ? 'null' : ch}, '${safeFood}', '${safeFull}')">${fmtKg(rec.val)}</span>`;
     }
     if (ds === today) cls += ' today';
     html += `<div class="${cls}" data-date="${ds}">${inner}</div>`;
@@ -1012,16 +1023,17 @@ function renderDietLossBoard() {
     if (!food) continue; // 当天没记录饮食则不计
     const drop = cur.val - sorted[i + 1].val; // 当天体重 − 次日体重 = 掉秤幅度(正=掉秤)
     if (drop > 0) {
-      events.push({ lossKg: drop, food });
+      events.push({ lossKg: drop, food, full: cur.fullness || '' });
     }
   }
-  // 按食物分组：同一食物取最高/最低掉秤
+  // 按食物分组：同一食物取最高/最低掉秤；饱腹感取该食物「最近一次有记录」的值
   const byFood = {};
   for (const e of events) {
-    if (!byFood[e.food]) byFood[e.food] = { food: e.food, max: e.lossKg, min: e.lossKg };
+    if (!byFood[e.food]) byFood[e.food] = { food: e.food, max: e.lossKg, min: e.lossKg, full: e.full || '' };
     else {
       if (e.lossKg > byFood[e.food].max) byFood[e.food].max = e.lossKg;
       if (e.lossKg < byFood[e.food].min) byFood[e.food].min = e.lossKg;
+      if (e.full) byFood[e.food].full = e.full; // 后出现的覆盖（最新一次）
     }
   }
   const rows = Object.values(byFood);
@@ -1035,6 +1047,7 @@ function renderDietLossBoard() {
       <td style="color:var(--success);font-weight:700;white-space:nowrap;">${fmtKg(r.max)}kg</td>
       <td style="color:var(--warning);white-space:nowrap;">${fmtKg(r.min)}kg</td>
       <td style="white-space:normal;">${r.food}</td>
+      <td style="font-size:11px;color:var(--text-light);white-space:normal;">${r.full || '—'}</td>
     </tr>`).join('');
   }
 }
@@ -1042,10 +1055,10 @@ function renderDietLossBoard() {
 function initDietAutocomplete() {
   const noteInput = document.getElementById('weightNote');
   const box = document.getElementById('dietSuggest');
-  noteInput.addEventListener('input', () => {
+  function showSuggest() {
     const v = noteInput.value.trim();
-    const matches = dietHistory.filter(x => x !== v && x.includes(v)).slice(0, 8);
-    if (!v || matches.length === 0) { box.style.display = 'none'; return; }
+    const matches = dietHistory.filter(x => x !== v && x.toLowerCase().includes(v.toLowerCase())).slice(0, 8);
+    if (matches.length === 0) { box.style.display = 'none'; return; }
     box.innerHTML = '';
     matches.forEach(m => {
       const opt = document.createElement('div');
@@ -1055,7 +1068,10 @@ function initDietAutocomplete() {
       box.appendChild(opt);
     });
     box.style.display = 'block';
-  });
+  }
+  noteInput.addEventListener('input', showSuggest);
+  // 聚焦且为空时，直接列出历史食物
+  noteInput.addEventListener('focus', () => { if (!noteInput.value.trim()) showSuggest(); });
   noteInput.addEventListener('blur', () => setTimeout(() => { box.style.display = 'none'; }, 150));
 }
 
