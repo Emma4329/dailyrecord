@@ -155,9 +155,29 @@
   .period-cal .day.period { background: var(--pink); color: white; font-weight: 700; }
   .period-cal .day.predicted { background: var(--pink-light); color: var(--pink); }
   .period-cal .day.fertile { background: #D8F0DC; color: #2D7D46; }
-  .period-cal .day.ovulation { background: var(--success); color: white; font-weight: 700; }
-  .period-cal .day.today { box-shadow: 0 0 0 2px var(--primary); }
+  .period-cal .day.ovulation { background: transparent; color: var(--text); border: 2px solid var(--pink); font-weight: 700; }
+  .period-cal .day.today { background: var(--success); color: white; font-weight: 700; border: none; box-shadow: none; }
   .period-cal .day.other-month { opacity: 0.3; }
+
+  /* 体重日历 */
+  .weight-cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 10px; }
+  .weight-cal .dow { text-align: center; font-size: 10px; color: var(--text-light); padding: 4px 0; }
+  .weight-cal .wday {
+    aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 12px; border-radius: 50%; background: var(--bg); position: relative; padding: 2px;
+  }
+  .weight-cal .wday .wday-num { line-height: 1.1; }
+  .weight-cal .wday.recorded { background: rgba(59,125,216,0.12); border: 1.5px solid var(--info); }
+  .weight-cal .wday .wday-weight {
+    font-size: 9px; font-weight: 700; color: var(--info); line-height: 1.1; margin-top: 1px; cursor: pointer;
+  }
+  .weight-cal .wday.today { background: var(--info); }
+  .weight-cal .wday.today .wday-num,
+  .weight-cal .wday.today .wday-weight { color: #fff; }
+  .weight-cal .wday.other-month { opacity: 0.3; }
+  .weight-cal .wday.selected { background: var(--danger); border-color: var(--danger); }
+  .weight-cal .wday.selected .wday-num,
+  .weight-cal .wday.selected .wday-weight { color: #fff; }
 
   /* ====== 体重趋势图 ====== */
   .weight-chart { width: 100%; height: 180px; position: relative; margin: 10px 0; }
@@ -197,21 +217,23 @@
   }
   .diet-suggest .diet-opt:last-child { border-bottom: none; }
   .diet-suggest .diet-opt:hover { background: var(--bg); }
-  #page-weight thead th, #weightTableBody td { white-space: nowrap; }
-  #weightTableBody td:nth-child(2), #page-weight thead th:nth-child(2) { white-space: normal; width: 110px; min-width: 100px; vertical-align: top; text-align: left; }
-  #weightTableBody td:nth-child(4), #page-weight thead th:nth-child(4) { white-space: normal; min-width: 120px; }
+  #weightHistoryTable thead th, #weightTableBody td { white-space: nowrap; }
+  #weightTableBody td:nth-child(2), #weightHistoryTable thead th:nth-child(2) { white-space: normal; width: 92px; min-width: 82px; vertical-align: top; text-align: left; }
+  #weightTableBody td:nth-child(3), #weightHistoryTable thead th:nth-child(3) { white-space: nowrap; width: 64px; min-width: 56px; }
+  #weightTableBody td:nth-child(4), #weightHistoryTable thead th:nth-child(4) { white-space: normal; min-width: 120px; }
   .weight-form-line { display: flex; gap: 10px; align-items: stretch; }
   .weight-form-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-  .weight-form-col.date-col { flex: 1.05; }
+  .weight-form-col.date-col { flex: 0.7; }
   .weight-form-col.weight-col { flex: 1; }
   .weight-form-col input { height: 46px; padding: 0 10px; line-height: 46px; box-sizing: border-box; }
   .yr { font-size: 10px; color: var(--text-light); }
   .next-predict { font-size: 13px; color: var(--text-light); text-align: center; margin-bottom: 12px; }
-  .diet-board-table { table-layout: fixed; }
+  .diet-board-table { table-layout: fixed; width: 100%; min-width: 0; }
   .diet-board-table th, .diet-board-table td { text-align: center; }
-  .diet-board-table th:nth-child(1), .diet-board-table td:nth-child(1) { width: 12%; }
-  .diet-board-table th:nth-child(2), .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(2), .diet-board-table td:nth-child(3) { width: 26%; }
-  .diet-board-table th:nth-child(4), .diet-board-table td:nth-child(4) { width: 36%; }
+  .diet-board-table td { vertical-align: middle; }
+  .diet-board-table th:nth-child(1), .diet-board-table td:nth-child(1) { width: 34px; }
+  .diet-board-table th:nth-child(2), .diet-board-table th:nth-child(3), .diet-board-table td:nth-child(2), .diet-board-table td:nth-child(3) { width: 52px; }
+  .diet-board-table th:nth-child(4), .diet-board-table td:nth-child(4) { width: auto; }
   .weight-scale-card {
     text-align: center; padding: 18px 8px 16px;
     background: linear-gradient(135deg, #2196F3, #03A9F4);
@@ -289,8 +311,9 @@
       <div class="hint">
         <span style="display:inline-block;width:10px;height:10px;background:var(--pink);border-radius:50%;vertical-align:middle;"></span> 实际经期
         <span style="display:inline-block;width:10px;height:10px;background:var(--pink-light);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 预测经期
-        <span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 排卵日
+        <span style="display:inline-block;width:10px;height:10px;background:transparent;border:2px solid var(--pink);border-radius:50%;vertical-align:middle;margin-left:8px;box-sizing:border-box;"></span> 排卵日
         <span style="display:inline-block;width:10px;height:10px;background:#D8F0DC;border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 易孕期
+        <span style="display:inline-block;width:10px;height:10px;background:var(--success);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 今天
       </div>
     </div>
 
@@ -356,29 +379,33 @@
       </div>
     </div>
 
-    <!-- 体重趋势图 -->
+    <!-- 体重日历 -->
     <div class="card">
       <div class="card-title">
-        <span class="icon">📉</span>体重趋势图
+        <span class="icon">📉</span>体重日历
         <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
           <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftWeightChart(-1)">上月</button>
           <span id="weightChartMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
           <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftWeightChart(1)">下月</button>
         </span>
       </div>
-      <div class="weight-chart" id="weightChart" style="height:220px;"></div>
+      <div class="weight-cal" id="weightChart"></div>
+      <div class="hint" style="margin-top:8px;">
+        <span style="display:inline-block;width:10px;height:10px;background:var(--info);border-radius:50%;vertical-align:middle;"></span> 已记录体重
+        <span style="display:inline-block;width:10px;height:10px;background:var(--danger);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 选中
+      </div>
       <div id="weightChartPopup" class="chart-popup" style="display:none;"></div>
     </div>
 
     <!-- 历史记录 -->
     <div class="card">
       <div class="card-title"><span class="icon">📜</span>历史记录</div>
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>变化</th><th>日期</th><th>体重</th><th>饮食</th><th></th></tr></thead>
-          <tbody id="weightTableBody"></tbody>
-        </table>
-      </div>
+        <div class="table-scroll">
+          <table id="weightHistoryTable">
+            <thead><tr><th>减幅</th><th>日期</th><th>体重</th><th>饮食</th><th></th><th></th></tr></thead>
+            <tbody id="weightTableBody"></tbody>
+          </table>
+        </div>
       <div id="weightEmpty" class="empty-tip">暂无体重记录</div>
     </div>
 
@@ -751,6 +778,16 @@ function deleteWeight(ts) {
   renderWeight();
 }
 
+// 修改：把记录回填到顶部表单，方便编辑后保存（同一天覆盖）
+function editWeight(ts) {
+  const w = weights.find(x => x.ts === ts);
+  if (!w) return;
+  document.getElementById('weightDate').value = w.date;
+  document.getElementById('weightVal').value = w.val;
+  document.getElementById('weightNote').value = w.note || '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
 // 区间总变化（斤）：末-初，负=减重；1kg=2斤
 function totalChangeJin(list) {
   if (list.length < 2) return '--';
@@ -821,7 +858,8 @@ function renderWeight() {
         <td>${mdyDateBr(w.date)}</td>
         <td><strong>${fmtKg(w.val)}</strong> kg</td>
         <td style="font-size:11px;color:var(--text-light)">${w.note || ''}</td>
-        <td><button class="btn btn-danger" onclick="deleteWeight(${w.ts})">删除</button></td>
+        <td><button class="btn btn-outline" style="padding:4px 8px;font-size:11px;" onclick="editWeight(${w.ts})">修改</button></td>
+        <td><button class="btn btn-danger" style="padding:4px 8px;font-size:11px;" onclick="deleteWeight(${w.ts})">删除</button></td>
       </tr>`;
     }).join('');
   }
@@ -844,16 +882,16 @@ function shiftWeightChart(delta) {
 }
 function showWeightPointPopup(date, val, change, food) {
   const popup = document.getElementById('weightChartPopup');
-  // 复位所有圆点为默认色，再把被点击的圆点标红
-  document.querySelectorAll('#weightChart circle').forEach(c => c.setAttribute('fill', 'var(--info)'));
-  const hit = Array.from(document.querySelectorAll('#weightChart circle')).find(c => c.getAttribute('data-date') === date);
-  if (hit) hit.setAttribute('fill', 'var(--danger)');
+  // 复位选中：移除旧的 selected 高亮
+  document.querySelectorAll('#weightChart .wday.selected').forEach(c => c.classList.remove('selected'));
+  const hit = document.querySelector(`#weightChart .wday[data-date="${date}"]`);
+  if (hit) hit.classList.add('selected');
   const chHtml = change === null ? '--' : `<span style="color:${change < 0 ? 'var(--success)' : (change > 0 ? 'var(--danger)' : 'var(--text-light)')}">${fmtKg(change, true)}kg</span>`;
   popup.innerHTML = `
     <span class="pop-close" onclick="document.getElementById('weightChartPopup').style.display='none'">×</span>
     <div class="pop-date">${cnDate(date)}</div>
     <div class="pop-row"><span class="pop-label">体重</span><span class="pop-value">${fmtKg(val)}kg</span></div>
-    <div class="pop-row"><span class="pop-label">变化</span><span class="pop-value">${chHtml}</span></div>
+    <div class="pop-row"><span class="pop-label">减幅</span><span class="pop-value">${chHtml}</span></div>
     <div class="pop-row"><span class="pop-label">饮食</span><span class="pop-value">${food || '—'}</span></div>
   `;
   popup.style.display = 'block';
@@ -864,79 +902,53 @@ function renderWeightChartMonth(id) {
   const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
   document.getElementById('weightChartMonthLabel').textContent = `${chartYear}年${monthNames[chartMonth]}`;
 
-  // 筛选当月数据
-  const data = weights.filter(w => {
-    const d = parseDate(w.date);
-    return d.getFullYear() === chartYear && d.getMonth() === chartMonth;
-  }).sort((a, b) => a.date < b.date ? -1 : 1);
-
-  if (data.length === 0) { el.innerHTML = '<div class="empty-tip" style="padding:20px;">该月暂无数据</div>'; return; }
-
-  const w = el.offsetWidth || 300;
-  const h = el.offsetHeight || 180;
-  const pad = { top: 20, right: 20, bottom: 30, left: 40 };
-  const cw = w - pad.left - pad.right;
-  const ch = h - pad.top - pad.bottom;
+  const labels = ['日','一','二','三','四','五','六'];
+  const firstDay = new Date(chartYear, chartMonth, 1);
+  const startDow = firstDay.getDay();
   const daysInMonth = new Date(chartYear, chartMonth + 1, 0).getDate();
+  const prevMonthDays = new Date(chartYear, chartMonth, 0).getDate();
+  const today = todayStr();
 
-  const vals = data.map(d => d.val);
-  let minV = Math.min(...vals), maxV = Math.max(...vals);
-  const range = maxV - minV || 1;
-  minV -= range * 0.2; maxV += range * 0.2;
-  const span = maxV - minV;
-
-  // 为每个数据点计算下一天的变化
+  // 当月记录的体重，按日期索引
+  const byDate = {};
   const allAsc = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
-  function nextChange(d) {
-    const idx = allAsc.findIndex(x => x.date === d.date && x.ts === d.ts);
-    if (idx >= 0 && idx < allAsc.length - 1) return allAsc[idx + 1].val - d.val;
+  for (const w of allAsc) {
+    const d = parseDate(w.date);
+    if (d.getFullYear() === chartYear && d.getMonth() === chartMonth) byDate[w.date] = w;
+  }
+  // 每条记录的下一天变化
+  function nextChange(w) {
+    const idx = allAsc.findIndex(x => x.ts === w.ts);
+    if (idx >= 0 && idx < allAsc.length - 1) return allAsc[idx + 1].val - w.val;
     return null;
   }
 
-  const points = data.map(d => {
-    const day = parseDate(d.date).getDate();
-    const x = pad.left + ((day - 1) / (daysInMonth - 1)) * cw;
-    const y = pad.top + ch - ((d.val - minV) / span) * ch;
-    return { x, y, val: d.val, date: d.date, food: d.note, ts: d.ts };
-  });
+  let html = '';
+  for (let i = 0; i < 7; i++) html += `<div class="dow">${labels[i]}</div>`;
 
-  const pathD = points.map((p, i) => (i === 0 ? 'M' : 'L') + p.x.toFixed(1) + ',' + p.y.toFixed(1)).join(' ');
-  const areaD = pathD + ` L${points[points.length-1].x.toFixed(1)},${(pad.top+ch).toFixed(1)} L${points[0].x.toFixed(1)},${(pad.top+ch).toFixed(1)} Z`;
+  for (let i = startDow - 1; i >= 0; i--) html += `<div class="wday other-month">${prevMonthDays - i}</div>`;
 
-  // Y 轴刻度
-  let yTicks = '';
-  for (let i = 0; i <= 2; i++) {
-    const v = minV + (span * i / 2);
-    const y = pad.top + ch - (i / 2) * ch;
-    yTicks += `<line x1="${pad.left}" y1="${y}" x2="${w-pad.right}" y2="${y}" stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3"/>`;
-    yTicks += `<text x="${pad.left-6}" y="${y+3}" font-size="9" fill="var(--text-light)" text-anchor="end">${fmtKg(v)}</text>`;
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${chartYear}-${String(chartMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const rec = byDate[ds];
+    let cls = 'wday';
+    let inner = `<span class="wday-num">${d}</span>`;
+    if (rec) {
+      cls += ' recorded';
+      const safeDate = rec.date.replace(/'/g, "\\'");
+      const safeFood = (rec.note || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      const ch = nextChange(rec);
+      inner += `<span class="wday-weight" onclick="showWeightPointPopup('${safeDate}', ${rec.val}, ${ch === null ? 'null' : ch}, '${safeFood}')">${fmtKg(rec.val)}</span>`;
+    }
+    if (ds === today) cls += ' today';
+    html += `<div class="${cls}" data-date="${ds}">${inner}</div>`;
   }
 
-  // X 轴标签（每5天显示一个）
-  let xLabels = '';
-  for (let day = 1; day <= daysInMonth; day += 5) {
-    const x = pad.left + ((day - 1) / (daysInMonth - 1)) * cw;
-    xLabels += `<text x="${x}" y="${h-8}" font-size="9" fill="var(--text-light)" text-anchor="middle">${day}日</text>`;
-  }
+  const totalCells = startDow + daysInMonth;
+  const remaining = (7 - (totalCells % 7)) % 7;
+  for (let i = 1; i <= remaining; i++) html += `<div class="wday other-month">${i}</div>`;
 
-  const dots = points.map(p => {
-    const ch = nextChange(p);
-    const safeDate = p.date.replace(/'/g, "\\'");
-    const safeFood = (p.food || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-    return `<circle cx="${p.x}" cy="${p.y}" r="4" fill="var(--info)" data-date="${p.date}" style="cursor:pointer;" onclick="showWeightPointPopup('${safeDate}', ${p.val}, ${ch === null ? 'null' : ch}, '${safeFood}')"/>`;
-  }).join('');
-
-  el.innerHTML = `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">
-    <defs><linearGradient id="grad-${id}" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#3B7DD8" stop-opacity="0.3"/>
-      <stop offset="100%" stop-color="#3B7DD8" stop-opacity="0.02"/>
-    </linearGradient></defs>
-    ${yTicks}
-    <path d="${areaD}" fill="url(#grad-${id})"/>
-    <path d="${pathD}" fill="none" stroke="#3B7DD8" stroke-width="2"/>
-    ${dots}
-    ${xLabels}
-  </svg>`;
+  el.innerHTML = html;
 }
 
 
@@ -992,7 +1004,7 @@ function renderDietLossBoard() {
       <td style="font-weight:700;color:var(--text-light);">${idx + 1}</td>
       <td style="color:var(--success);font-weight:700;white-space:nowrap;">${fmtKg(r.max)}kg</td>
       <td style="color:var(--warning);white-space:nowrap;">${fmtKg(r.min)}kg</td>
-      <td style="white-space:normal;min-width:120px;">${r.food}</td>
+      <td style="white-space:normal;">${r.food}</td>
     </tr>`).join('');
   }
 }
