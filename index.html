@@ -281,23 +281,23 @@
     border-radius: 8px;
   }
   .hist-scroll table, .diet-scroll table { min-width: 420px; }
-  #birthdayTable { table-layout: fixed; width: 312px; min-width: 0; }
+  #birthdayTable { table-layout: fixed; width: 336px; min-width: 0; }
   #birthdayTable thead th, #birthdayBody td { text-align: center; vertical-align: middle; }
-  /* 字宽固定 px：还有几天3.5字=56 名称4字=64 今年岁数4字=64 出生日期8字=128 */
-  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 56px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  /* 字宽固定 px：还有几天4.5字=72 名称4字=64 今年岁数4.5字=72 出生日期8字=128 */
+  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 72px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 64px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 72px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 128px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-  .anniv-list-table { table-layout: fixed; width: 304px; min-width: 0; border-collapse: collapse; }
+  .anniv-list-table { table-layout: fixed; width: 336px; min-width: 0; border-collapse: collapse; }
   .anniv-list-table th, .anniv-list-table td { border-bottom: 1px solid var(--border); padding: 10px 4px; font-size: 12px; text-align: center; vertical-align: middle; }
   .anniv-list-table thead th { color: var(--text-light); font-weight: 600; background: var(--bg); }
-  /* 字宽固定 px：名称3字=48 日期7字=112 类型2字=32 距今天数4字=64 删除3字=48 */
+  /* 字宽固定 px：名称3字=48 日期7字=112 类型3字=48 距今天数4字=64 删除4字=64 */
   .anniv-list-table th:nth-child(1), .anniv-list-table td:nth-child(1) { width: 48px; white-space: normal; word-break: break-all; }
   .anniv-list-table th:nth-child(2), .anniv-list-table td:nth-child(2) { width: 112px; white-space: normal; word-break: break-all; }
-  .anniv-list-table th:nth-child(3), .anniv-list-table td:nth-child(3) { width: 32px; }
+  .anniv-list-table th:nth-child(3), .anniv-list-table td:nth-child(3) { width: 48px; }
   .anniv-list-table th:nth-child(4), .anniv-list-table td:nth-child(4) { width: 64px; white-space: normal; }
-  .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 48px; }
+  .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 64px; }
   .anniv-list-table .btn-danger { padding: 4px 8px; font-size: 11px; }
 
   .weekly-modal-mask {
@@ -500,6 +500,7 @@
             <option value="countdown">倒计时（单次）</option>
             <option value="together">在一起天数</option>
             <option value="birthday" selected>生日</option>
+            <option value="festival">节日</option>
           </select>
         </div>
       </div>
@@ -1402,7 +1403,7 @@ function renderAnniv() {
     return x.info.days - y.info.days;
   });
 
-  const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起', birthday: '生日' };
+  const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起', birthday: '生日', festival: '节日' };
   const today = todayStr();
   let rows = sorted.map(({ a, info }) => {
     const dateText = a.cal === 'lunar' && a.lunarText ? a.lunarText : cnDate(a.date);
