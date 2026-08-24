@@ -284,10 +284,10 @@
   #birthdayTable { table-layout: fixed; width: 100%; }
   #birthdayTable thead th, #birthdayBody td { text-align: center; vertical-align: middle; }
   /* 2:2:2:4.5 字宽比例 */
-  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 11%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 11%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 11%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 67%; white-space: normal; word-break: break-all; }
+  #birthdayTable thead th:nth-child(1), #birthdayBody td:nth-child(1) { width: 19%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(2), #birthdayBody td:nth-child(2) { width: 15%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(3), #birthdayBody td:nth-child(3) { width: 19%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #birthdayTable thead th:nth-child(4), #birthdayBody td:nth-child(4) { width: 47%; white-space: normal; word-break: break-all; }
 
   .anniv-list-table { table-layout: fixed; width: 100%; border-collapse: collapse; min-width: 420px; }
   .anniv-list-table th, .anniv-list-table td { border-bottom: 1px solid var(--border); padding: 10px 4px; font-size: 12px; text-align: center; vertical-align: middle; }
@@ -507,8 +507,8 @@
         <div class="weight-form-col" style="flex:1;">
           <label>历法</label>
           <select id="annivCal" onchange="toggleAnnivDateMode()">
-            <option value="solar" selected>阳历</option>
-            <option value="lunar">农历</option>
+            <option value="solar">阳历</option>
+            <option value="lunar" selected>农历</option>
           </select>
         </div>
         <div class="weight-form-col date-col" style="flex:2.5;">
@@ -538,7 +538,7 @@
 
     <!-- 纪念日列表 -->
     <div class="card">
-      <div class="card-title"><span class="icon">💌</span>纪念日列表</div>
+      <div class="card-title"><span class="icon">💌</span>纪念日列表（可删除）</div>
       <div id="annivList"></div>
       <div id="annivEmpty" class="empty-tip">暂无纪念日</div>
     </div>
