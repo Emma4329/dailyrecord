@@ -303,11 +303,13 @@
   .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 64px; }
   .anniv-list-table .btn-danger { padding: 4px 8px; font-size: 11px; }
 
-  .period-hist-table { table-layout: fixed; width: auto; min-width: 0; border-collapse: collapse; }
+  .period-hist-table { table-layout: fixed; width: 336px; min-width: 0; border-collapse: collapse; }
   .period-hist-table th, .period-hist-table td { border-bottom: 1px solid var(--border); padding: 10px 4px; font-size: 12px; text-align: center; vertical-align: middle; }
-  /* 修改/删除列 3字=48px */
+  /* 开始日期6字=96, 距离上次/修改/删除各5字=80 */
+  .period-hist-table th:nth-child(1), .period-hist-table td:nth-child(1) { width: 96px; }
+  .period-hist-table th:nth-child(2), .period-hist-table td:nth-child(2),
   .period-hist-table th:nth-child(3), .period-hist-table td:nth-child(3),
-  .period-hist-table th:nth-child(4), .period-hist-table td:nth-child(4) { width: 48px; }
+  .period-hist-table th:nth-child(4), .period-hist-table td:nth-child(4) { width: 80px; }
 
   .weekly-modal-mask {
     position: fixed; inset: 0; background: rgba(61,43,69,0.55);
@@ -1352,8 +1354,13 @@ function anniversarySolarDate(a, yearOffset) {
   return `${year}-${String(target.getMonth()+1).padStart(2,'0')}-${String(target.getDate()).padStart(2,'0')}`;
 }
 
-// 出生日期展示文本
+// 出生日期展示文本（节日不显示年份）
 function birthDateText(a) {
+  if (a.type === 'festival') {
+    if (a.cal === 'lunar' && a.lm && a.ld) return `${LUNAR_MONTH[a.lm-1]}月${LUNAR_DAY[a.ld-1]}`;
+    const d = parseDate(a.date);
+    return `${d.getMonth()+1}月${d.getDate()}日`;
+  }
   if (a.cal === 'lunar' && a.lunarText) return a.lunarText;
   const d = parseDate(a.date);
   return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日`;
@@ -1423,7 +1430,13 @@ function renderAnniv() {
   const typeLabels = { anniversary: '每年纪念日', countdown: '倒计时', together: '在一起', birthday: '生日', festival: '节日' };
   const today = todayStr();
   let rows = sorted.map(({ a, info }) => {
-    const dateText = a.cal === 'lunar' && a.lunarText ? a.lunarText : cnDate(a.date);
+    let dateText;
+    if (a.type === 'festival') {
+      if (a.cal === 'lunar' && a.lm && a.ld) dateText = `${LUNAR_MONTH[a.lm-1]}月${LUNAR_DAY[a.ld-1]}`;
+      else { const d = parseDate(a.date); dateText = `${d.getMonth()+1}月${d.getDate()}日`; }
+    } else {
+      dateText = a.cal === 'lunar' && a.lunarText ? a.lunarText : cnDate(a.date);
+    }
     const rawDays = Math.abs(daysBetween(a.date, today));
     return `<tr>
       <td class="anniv-td-name">${a.name}</td>
@@ -1446,7 +1459,7 @@ function renderBirthdayBoard() {
   const empty = document.getElementById('birthdayEmpty');
   if (!tbody) return;
   const bdays = annivs
-    .filter(a => a.type === 'birthday')
+    .filter(a => a.type === 'birthday' || a.type === 'festival')
     .map(a => ({ a, info: getAnnivInfo(a) }))
     .sort((x, y) => x.info.days - y.info.days);
   if (bdays.length === 0) {
@@ -1456,8 +1469,8 @@ function renderBirthdayBoard() {
     tbody.innerHTML = bdays.map(({ a, info }) => `<tr>
       <td style="color:var(--primary);font-weight:700;">${info.days}天</td>
       <td>${a.name}</td>
-      <td style="text-align:center;">${info.age}岁</td>
-      <td style="text-align:center;">${info.birthDateText}</td>
+      <td style="text-align:center;">${a.type === 'festival' ? '—' : info.age + '岁'}</td>
+      <td style="text-align:center;">${birthDateText(a)}</td>
     </tr>`).join('');
   }
 }
