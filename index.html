@@ -35,7 +35,14 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   }
   .top-bar h1 { font-size: 18px; font-weight: 700; }
-  .top-bar .date { font-size: 11px; opacity: 0.85; }
+  .top-actions { display: flex; gap: 8px; align-items: center; }
+  .btn-top {
+    background: rgba(255,255,255,0.22); color: #fff; border: none; cursor: pointer;
+    font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .btn-top:active { background: rgba(255,255,255,0.35); }
+  .btn-top-outline { background: transparent; border: 1px solid rgba(255,255,255,0.65); }
 
   /* ====== 主区域 ====== */
   .main {
@@ -335,7 +342,11 @@
 <!-- ====== 顶部标题栏 ====== -->
 <div class="top-bar">
   <h1 id="topTitle">经期</h1>
-  <span class="date" id="topDate"></span>
+  <div class="top-actions">
+    <button class="btn-top" onclick="exportAllData()">导出全部</button>
+    <button class="btn-top btn-top-outline" onclick="document.getElementById('importFile').click()">导入</button>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none;" onchange="importAllData(this)">
+  </div>
 </div>
 
 <!-- ====== 主区域 ====== -->
@@ -343,14 +354,6 @@
 
   <!-- ========== 体重记录 ========== -->
   <div class="page active" id="page-weight">
-    <div class="card">
-      <div class="card-title"><span class="icon">🗂️</span>数据管理</div>
-      <div style="display:flex;gap:10px;">
-        <button class="btn btn-primary" onclick="exportAllData()" style="flex:1;">导出全部</button>
-        <button class="btn btn-outline" onclick="document.getElementById('importFile').click()" style="flex:1;">导入</button>
-        <input type="file" id="importFile" accept="application/json,.json" style="display:none;" onchange="importAllData(this)">
-      </div>
-    </div>
     <div class="card">
       <div class="card-title"><span class="icon">⚖️</span>记录体重</div>
       <div class="form-row">
@@ -1555,10 +1558,6 @@ function renderAll() {
   renderAnniv();
 }
 function init() {
-  // 顶部日期
-  const d = new Date();
-  const weekdays = ['日','一','二','三','四','五','六'];
-  document.getElementById('topDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
   document.getElementById('topTitle').textContent = PAGE_TITLES['weight'];
   document.title = PAGE_TITLES['weight'] + '记录台';
 
