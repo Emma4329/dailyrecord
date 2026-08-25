@@ -344,6 +344,14 @@
   <!-- ========== 体重记录 ========== -->
   <div class="page active" id="page-weight">
     <div class="card">
+      <div class="card-title"><span class="icon">🗂️</span>数据管理</div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary" onclick="exportAllData()" style="flex:1;">导出全部</button>
+        <button class="btn btn-outline" onclick="document.getElementById('importFile').click()" style="flex:1;">导入</button>
+        <input type="file" id="importFile" accept="application/json,.json" style="display:none;" onchange="importAllData(this)">
+      </div>
+    </div>
+    <div class="card">
       <div class="card-title"><span class="icon">⚖️</span>记录体重</div>
       <div class="form-row">
         <div class="weight-form-line">
@@ -1508,6 +1516,29 @@ function exportAllData() {
   URL.revokeObjectURL(url);
   closeWeeklyModal();
 }
+function importAllData(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const keys = ['dr_period_v1', 'dr_weight_v1', 'dr_anniv_v1', 'dr_diet_v1'];
+      keys.forEach(k => {
+        if (data[k] !== undefined) {
+          const v = Array.isArray(data[k]) ? data[k] : data[k];
+          localStorage.setItem(k, JSON.stringify(v));
+        }
+      });
+      alert('导入成功，已覆盖本地数据');
+      renderAll();
+    } catch (e) {
+      alert('导入失败：文件格式不正确');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
 function checkWeeklyPopup() {
   let last = '';
   try { last = localStorage.getItem(KEY_WEEKLY_POPUP) || ''; } catch (e) {}
@@ -1518,6 +1549,11 @@ function checkWeeklyPopup() {
 }
 
 // ====== 初始化 ======
+function renderAll() {
+  renderWeight();
+  renderPeriod();
+  renderAnniv();
+}
 function init() {
   // 顶部日期
   const d = new Date();
