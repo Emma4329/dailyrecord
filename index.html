@@ -7,6 +7,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#7B4B9C">
 <title>记录平台</title>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
 <style>
   :root {
     --primary: #7B4B9C; --primary-light: #C9A3DC; --primary-dark: #5A3578;
@@ -300,6 +303,12 @@
   .anniv-list-table th:nth-child(5), .anniv-list-table td:nth-child(5) { width: 64px; }
   .anniv-list-table .btn-danger { padding: 4px 8px; font-size: 11px; }
 
+  .period-hist-table { table-layout: fixed; width: auto; min-width: 0; border-collapse: collapse; }
+  .period-hist-table th, .period-hist-table td { border-bottom: 1px solid var(--border); padding: 10px 4px; font-size: 12px; text-align: center; vertical-align: middle; }
+  /* 修改/删除列 3字=48px */
+  .period-hist-table th:nth-child(3), .period-hist-table td:nth-child(3),
+  .period-hist-table th:nth-child(4), .period-hist-table td:nth-child(4) { width: 48px; }
+
   .weekly-modal-mask {
     position: fixed; inset: 0; background: rgba(61,43,69,0.55);
     display: flex; align-items: center; justify-content: center; z-index: 200; padding: 20px;
@@ -438,16 +447,16 @@
   <!-- ========== 经期记录 ========== -->
   <div class="page" id="page-period">
     <div class="card">
-      <div class="card-title"><span class="icon">🌸</span>记录经期</div>
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span><span class="icon">🌸</span>记录经期</span>
+        <span class="next-predict" id="periodNextLine" style="margin:0;text-align:right;white-space:nowrap;"></span>
+      </div>
       <div class="days-left" id="periodDaysLeft"></div>
       <div class="form-row">
         <label>开始日期</label>
         <input type="date" id="periodStart" lang="zh-CN">
       </div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button class="btn btn-pink" onclick="savePeriod()" style="flex:1;">保存经期</button>
-        <span class="next-predict" id="periodNextLine" style="text-align:right;white-space:nowrap;"></span>
-      </div>
+      <button class="btn btn-pink" onclick="savePeriod()" style="width:100%;">保存经期</button>
     </div>
 
     <!-- 经期日历 -->
@@ -477,7 +486,7 @@
         <span id="periodAvgCycleInline" style="margin-left:auto;font-size:12px;font-weight:600;color:var(--text-light);"></span>
       </div>
       <div class="table-scroll">
-        <table>
+        <table class="period-hist-table">
           <thead><tr><th>开始日期</th><th>距离上次</th><th></th><th></th></tr></thead>
           <tbody id="periodTableBody"></tbody>
         </table>
@@ -1399,8 +1408,12 @@ function renderAnniv() {
   }
   empty.style.display = 'none';
 
-  // 排序：按年龄从小到大（有年龄的在前，无年龄的排后面）
+  // 排序：非节日按年龄升序，节日按距今天数升序
   const sorted = annivs.map(a => ({ a, info: getAnnivInfo(a) })).sort((x, y) => {
+    const xF = x.a.type === 'festival' ? 1 : 0;
+    const yF = y.a.type === 'festival' ? 1 : 0;
+    if (xF !== yF) return xF - yF;
+    if (xF === 1) return x.info.days - y.info.days;
     const xa = (typeof x.info.age === 'number') ? x.info.age : Infinity;
     const ya = (typeof y.info.age === 'number') ? y.info.age : Infinity;
     if (xa !== ya) return xa - ya;
