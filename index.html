@@ -35,6 +35,7 @@
     box-shadow: 0 2px 8px rgba(0,0,0,0.12);
   }
   .top-bar h1 { font-size: 18px; font-weight: 700; }
+  .top-date { font-size: 11px; opacity: 0.85; }
   .top-actions { display: flex; gap: 8px; align-items: center; }
   .btn-top {
     background: rgba(255,255,255,0.22); color: #fff; border: none; cursor: pointer;
@@ -342,7 +343,8 @@
 <!-- ====== 顶部标题栏 ====== -->
 <div class="top-bar">
   <h1 id="topTitle">经期</h1>
-  <div class="top-actions">
+  <span class="top-date" id="topDate"></span>
+  <div class="top-actions" id="topActions" style="display:none;">
     <button class="btn-top" onclick="exportAllData()">导出全部</button>
     <button class="btn-top btn-top-outline" onclick="document.getElementById('importFile').click()">导入</button>
     <input type="file" id="importFile" accept="application/json,.json" style="display:none;" onchange="importAllData(this)">
@@ -669,6 +671,10 @@ function switchPage(name) {
   document.querySelector(`.nav-item[data-page="${name}"]`).classList.add('active');
   document.getElementById('topTitle').textContent = PAGE_TITLES[name] || '记录平台';
   document.title = PAGE_TITLES[name] + '记录台';
+  // 顶端右侧：体重页显示日期，经期/纪念日页显示导出导入
+  const showActions = (name === 'period' || name === 'anniv');
+  document.getElementById('topDate').style.display = showActions ? 'none' : '';
+  document.getElementById('topActions').style.display = showActions ? 'flex' : 'none';
   if (name === 'period') { renderPeriod(); }
   if (name === 'weight') { renderWeight(); }
   if (name === 'anniv')  { renderAnniv(); }
@@ -1558,6 +1564,13 @@ function renderAll() {
   renderAnniv();
 }
 function init() {
+  // 顶部日期（仅体重页显示）
+  const d = new Date();
+  const weekdays = ['日','一','二','三','四','五','六'];
+  document.getElementById('topDate').textContent = `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日 周${weekdays[d.getDay()]}`;
+  // 初始为体重页：显示日期、隐藏导出导入
+  document.getElementById('topDate').style.display = '';
+  document.getElementById('topActions').style.display = 'none';
   document.getElementById('topTitle').textContent = PAGE_TITLES['weight'];
   document.title = PAGE_TITLES['weight'] + '记录台';
 
