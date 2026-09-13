@@ -110,6 +110,8 @@
   .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
   .btn-danger { background: transparent; border: 1.5px solid #E8C0BC; color: var(--danger); padding: 4px 10px; font-size: 12px; border-radius: 6px; }
   .btn-danger:hover { background: #FDE8E8; }
+  .btn-cycle { background: #e8f5e9; color: #1b5e20; border: 1.5px solid #a5d6a7; }
+  .btn-cycle:hover { background: #d5efd8; }
 
   /* ====== 表格 ====== */
   .table-scroll { overflow-x: auto; }
@@ -186,6 +188,8 @@
   .weight-cal .wday.today .wday-num,
   .weight-cal .wday.today .wday-weight { color: #fff; }
   .weight-cal .wday.other-month { opacity: 0.3; }
+  .weight-cal .wday.cycle { background: #e8f5e9; border: 1.5px solid #a5d6a7; }
+  .weight-cal .wday.cycle .wday-num { color: #1b5e20; font-weight: 700; }
   .weight-cal .wday.selected { background: var(--danger); border-color: var(--danger); }
   .weight-cal .wday.selected .wday-num,
   .weight-cal .wday.selected .wday-weight { color: #fff; }
@@ -379,12 +383,15 @@
       </div>
       <div class="form-row">
         <label>饱腹感（可选）</label>
-        <select id="weightFull">
-          <option value="">不填</option>
-          <option value="整天饱">整天饱</option>
-          <option value="半饱（7点左右）">半饱（7点左右）</option>
-          <option value="饿">饿</option>
-        </select>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <select id="weightFull" style="width:4em;flex:0 0 auto;box-sizing:border-box;min-width:0;padding:10px 6px;">
+            <option value="">不填</option>
+            <option value="整天饱">整天饱</option>
+            <option value="半饱（7点左右）">半饱（7点左右）</option>
+            <option value="饿">饿</option>
+          </select>
+          <button class="btn btn-cycle" onclick="startCheckinCycle()" style="flex:1;">开始这轮打卡</button>
+        </div>
       </div>
       <button class="btn btn-primary" onclick="saveWeight()" style="width:100%;">保存记录</button>
     </div>
@@ -426,6 +433,7 @@
       <div class="hint" style="margin-top:8px;">
         <span style="display:inline-block;width:10px;height:10px;background:var(--info);border-radius:50%;vertical-align:middle;"></span> 已记录体重
         <span style="display:inline-block;width:10px;height:10px;background:var(--danger);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 选中
+        <span style="display:inline-block;width:10px;height:10px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:3px;vertical-align:middle;margin-left:8px;"></span> 打卡周期
       </div>
       <div id="weightChartPopup" class="chart-popup" style="display:none;"></div>
     </div>
@@ -605,6 +613,7 @@
 const KEY_PERIOD = 'dr_period_v1';
 const KEY_WEIGHT = 'dr_weight_v1';
 const KEY_ANNIV  = 'dr_anniv_v1';
+const KEY_CYCLE  = 'dr_cycle_v1';
 
 let periods = JSON.parse(localStorage.getItem(KEY_PERIOD) || '[]');
 let weights = JSON.parse(localStorage.getItem(KEY_WEIGHT) || '[]');
@@ -615,6 +624,34 @@ let weightTarget = 64; // 固定目标体重 64kg
 function savePeriods() { localStorage.setItem(KEY_PERIOD, JSON.stringify(periods)); }
 function saveWeights() { localStorage.setItem(KEY_WEIGHT, JSON.stringify(weights)); }
 function saveAnnivs()  { localStorage.setItem(KEY_ANNIV,  JSON.stringify(annivs)); }
+
+// ====== 打卡周期（31 天）======
+// 起点为第 1 天，起点 + 31 天为第 32 天（结束），共 32 个日期
+const CYCLE_SPAN = 31;
+let cycleStart = localStorage.getItem(KEY_CYCLE) || '';
+function saveCycleStart(v) {
+  cycleStart = v;
+  try { localStorage.setItem(KEY_CYCLE, v); } catch (e) {}
+}
+function addDaysStr(ds, n) {
+  const d = parseDate(ds);
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+// 该日期在周期中的第几天（1..32），不在周期内返回 0
+function cycleDayIndex(ds) {
+  if (!cycleStart || !ds) return 0;
+  const diff = daysBetween(cycleStart, ds);
+  return (diff >= 0 && diff <= CYCLE_SPAN) ? diff + 1 : 0;
+}
+function cycleEndStr() { return cycleStart ? addDaysStr(cycleStart, CYCLE_SPAN) : ''; }
+function startCheckinCycle() {
+  const start = todayStr();
+  saveCycleStart(start);
+  const end = addDaysStr(start, CYCLE_SPAN);
+  renderWeightChartMonth('weightChart');
+  alert('已开始这轮打卡！\n第1天：' + cnDate(start) + '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end));
+}
 
 // ====== 工具函数 ======
 function todayStr() {
@@ -1076,9 +1113,11 @@ function showWeightPointPopup(date, val, change, food, fullness) {
   const hit = document.querySelector(`#weightChart .wday[data-date="${date}"]`);
   if (hit) hit.classList.add('selected');
   const chHtml = change === null ? '--' : `<span style="color:${change < 0 ? 'var(--success)' : (change > 0 ? 'var(--danger)' : 'var(--text-light)')}">${fmtKg(change, true)}kg</span>`;
+  const cyc = cycleDayIndex(date);
+  const cycHtml = cyc > 0 ? `<span style="color:#1b5e20;font-weight:700;">（第${cyc}天${cyc === CYCLE_SPAN + 1 ? '结束' : ''}）</span>` : '';
   popup.innerHTML = `
     <span class="pop-close" onclick="document.getElementById('weightChartPopup').style.display='none'">×</span>
-    <div class="pop-date">${cnDate(date)}</div>
+    <div class="pop-date">${cnDate(date)} ${cycHtml}</div>
     <div class="pop-row"><span class="pop-label">减幅</span><span class="pop-value">${chHtml}</span></div>
     <div class="pop-row"><span class="pop-label">体重</span><span class="pop-value">${fmtKg(val)}kg</span></div>
     <div class="pop-row"><span class="pop-label">饮食</span><span class="pop-value">${food || '—'}</span></div>
@@ -1123,6 +1162,7 @@ function renderWeightChartMonth(id) {
     const rec = byDate[ds];
     let cls = 'wday';
     let inner = `<span class="wday-num">${d}</span>`;
+    if (cycleDayIndex(ds) > 0) cls += ' cycle';
     if (rec) {
       cls += ' recorded';
       const safeDate = rec.date.replace(/'/g, "\\'");
