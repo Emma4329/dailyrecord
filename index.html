@@ -113,6 +113,29 @@
   .btn-cycle { background: #e8f5e9; color: #1b5e20; border: 1.5px solid #a5d6a7; }
   .btn-cycle:hover { background: #d5efd8; }
 
+  /* 月份选择器（体重日历 / 历史记录 标题右侧） */
+  .month-picker { margin-left: auto; display: flex; gap: 6px; align-items: center; }
+  .month-picker select {
+    height: 34px; padding: 0 6px; font-size: 13px; font-weight: 600;
+    border: 1.5px solid var(--border); border-radius: 8px;
+    background: var(--card); color: var(--text); box-sizing: border-box;
+  }
+  .month-picker select:focus { outline: none; border-color: var(--primary); }
+  .month-picker .mp-nav {
+    width: 32px; height: 34px; padding: 0; font-size: 14px; line-height: 1;
+    border: 1.5px solid var(--border); border-radius: 8px; background: transparent;
+    color: var(--text); cursor: pointer;
+  }
+  .month-picker .mp-nav:hover { border-color: var(--primary); color: var(--primary); }
+
+  /* 打卡周期榜：不跟历史记录一样锁高，宽度自适应手机 */
+  .cycle-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
+  #cycleBoardTable { table-layout: fixed; width: 100%; min-width: 0; }
+  #cycleBoardTable th, #cycleBoardTable td { text-align: center; }
+  #cycleBoardTable th:nth-child(1), #cycleBoardBody td:nth-child(1) { width: 15%; }
+  #cycleBoardTable th:nth-child(2), #cycleBoardBody td:nth-child(2) { width: 30%; }
+  #cycleBoardTable th:nth-child(3), #cycleBoardBody td:nth-child(3) { width: 55%; }
+
   /* ====== 表格 ====== */
   .table-scroll { overflow-x: auto; }
   table { width: 100%; min-width: 420px; border-collapse: collapse; font-size: 13px; }
@@ -185,10 +208,6 @@
   .weight-cal .wday .wday-weight {
     font-size: 9px; font-weight: 700; color: #1b5e20; line-height: 1.1; margin-top: 1px; cursor: pointer;
   }
-  /* 今天：蓝色描边圈（不用实心，避免与打卡周期的蓝色混淆） */
-  .weight-cal .wday.today { box-shadow: inset 0 0 0 1.5px var(--info); }
-  .weight-cal .wday.today .wday-num,
-  .weight-cal .wday.today .wday-weight { color: var(--info); }
   .weight-cal .wday.other-month { opacity: 0.3; }
   /* 打卡周期：淡蓝底 + 蓝色字 */
   .weight-cal .wday.cycle { background: rgba(59,125,216,0.12); border: 1.5px solid var(--info); }
@@ -198,9 +217,27 @@
   .weight-cal .wday.cycle.today .wday-weight { color: var(--info); }
   .weight-cal .wday.cycle.today { background: rgba(59,125,216,0.12); }
   .weight-cal .wday.cycle.today .wday-num { color: var(--info); }
-  .weight-cal .wday.selected { background: var(--danger); border-color: var(--danger); }
+  /* 今天：橙圈 + 橙字（含落在打卡周期内的今天），与蓝色周期/淡绿记录都区分 */
+  .weight-cal .wday.today { box-shadow: inset 0 0 0 2px #f39c12; }
+  .weight-cal .wday.cycle.today { box-shadow: inset 0 0 0 2px #f39c12; }
+  .weight-cal .wday.today .wday-num,
+  .weight-cal .wday.today .wday-weight,
+  .weight-cal .wday.cycle.today .wday-num,
+  .weight-cal .wday.cycle.today .wday-weight { color: #d35400; }
+  /* 选中：红底白字（放最后，优先级最高，覆盖 today/cycle/recorded） */
+  .weight-cal .wday.selected,
+  .weight-cal .wday.cycle.selected,
+  .weight-cal .wday.cycle.today.selected,
+  .weight-cal .wday.recorded.selected,
+  .weight-cal .wday.today.selected {
+    background: var(--danger); border-color: var(--danger); box-shadow: none;
+  }
   .weight-cal .wday.selected .wday-num,
-  .weight-cal .wday.selected .wday-weight { color: #fff; }
+  .weight-cal .wday.selected .wday-weight,
+  .weight-cal .wday.cycle.selected .wday-num,
+  .weight-cal .wday.cycle.selected .wday-weight,
+  .weight-cal .wday.today.selected .wday-num,
+  .weight-cal .wday.today.selected .wday-weight { color: #fff; }
 
   /* ====== 体重趋势图 ====== */
   .weight-chart { width: 100%; height: 180px; position: relative; margin: 10px 0; }
@@ -431,10 +468,11 @@
     <div class="card">
       <div class="card-title">
         <span class="icon">📉</span>体重日历
-        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftWeightChart(-1)">上月</button>
-          <span id="weightChartMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
-          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftWeightChart(1)">下月</button>
+        <span class="month-picker">
+          <button class="mp-nav" onclick="shiftWeightChart(-1)" title="上个月">‹</button>
+          <select id="chartYearSel" onchange="onChartPickerChange()"></select>
+          <select id="chartMonthSel" onchange="onChartPickerChange()"></select>
+          <button class="mp-nav" onclick="shiftWeightChart(1)" title="下个月">›</button>
         </span>
       </div>
       <div class="weight-cal" id="weightChart"></div>
@@ -442,6 +480,7 @@
         <span style="display:inline-block;width:10px;height:10px;background:#e8f5e9;border:1.5px solid #a5d6a7;border-radius:3px;vertical-align:middle;"></span> 已记录体重
         <span style="display:inline-block;width:10px;height:10px;background:var(--danger);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 选中
         <span style="display:inline-block;width:10px;height:10px;background:var(--info);border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 打卡周期
+        <span style="display:inline-block;width:10px;height:10px;border:2px solid #f39c12;border-radius:50%;vertical-align:middle;margin-left:8px;"></span> 今天
       </div>
       <div id="weightChartPopup" class="chart-popup" style="display:none;"></div>
     </div>
@@ -450,10 +489,11 @@
     <div class="card">
       <div class="card-title">
         <span class="icon">📜</span>历史记录
-        <span style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftHistMonth(-1)">上月</button>
-          <span id="histMonthLabel" style="font-size:13px;font-weight:600;min-width:70px;text-align:center;"></span>
-          <button class="btn btn-outline" style="padding:4px 12px;font-size:12px;" onclick="shiftHistMonth(1)">下月</button>
+        <span class="month-picker">
+          <button class="mp-nav" onclick="shiftHistMonth(-1)" title="上个月">‹</button>
+          <select id="histYearSel" onchange="onHistPickerChange()"></select>
+          <select id="histMonthSel" onchange="onHistPickerChange()"></select>
+          <button class="mp-nav" onclick="shiftHistMonth(1)" title="下个月">›</button>
         </span>
       </div>
       <div class="hist-scroll">
@@ -475,6 +515,18 @@
         </table>
       </div>
       <div id="dietBoardEmpty" class="empty-tip">暂无掉秤记录</div>
+    </div>
+
+    <!-- 打卡周期（历史轮次汇总，按减幅差从大到小） -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🔄</span>打卡周期</div>
+      <div class="cycle-scroll">
+        <table id="cycleBoardTable">
+          <thead><tr><th>#</th><th>减幅差</th><th>周期日期</th></tr></thead>
+          <tbody id="cycleBoardBody"></tbody>
+        </table>
+      </div>
+      <div id="cycleBoardEmpty" class="empty-tip">暂无打卡周期</div>
     </div>
   </div>
 
@@ -636,10 +688,22 @@ function saveAnnivs()  { localStorage.setItem(KEY_ANNIV,  JSON.stringify(annivs)
 // ====== 打卡周期（31 天）======
 // 起点为第 1 天，起点 + 31 天为第 32 天（结束），共 32 个日期
 const CYCLE_SPAN = 31;
+const KEY_CYCLES = 'dr_cycles_v1';   // 历史轮次：['2026-08-16', ...]
 let cycleStart = localStorage.getItem(KEY_CYCLE) || '';
+let cycleList = [];
+try {
+  const raw = JSON.parse(localStorage.getItem(KEY_CYCLES) || '[]');
+  if (Array.isArray(raw)) cycleList = raw.filter(x => typeof x === 'string' && x);
+} catch (e) { cycleList = []; }
+// 兼容旧数据：只有单轮起点时，补进历史列表
+if (cycleStart && cycleList.indexOf(cycleStart) < 0) cycleList.push(cycleStart);
 function saveCycleStart(v) {
   cycleStart = v;
-  try { localStorage.setItem(KEY_CYCLE, v); } catch (e) {}
+  if (v && cycleList.indexOf(v) < 0) cycleList.push(v);
+  try {
+    localStorage.setItem(KEY_CYCLE, v);
+    localStorage.setItem(KEY_CYCLES, JSON.stringify(cycleList));
+  } catch (e) {}
 }
 function addDaysStr(ds, n) {
   const d = parseDate(ds);
@@ -667,6 +731,7 @@ function startCheckinCycle() {
   saveCycleStart(start);
   const end = addDaysStr(start, CYCLE_SPAN);
   renderWeightChartMonth('weightChart');
+  renderCycleBoard();
   alert((hadPrev ? '已重新开始这轮打卡！' : '已开始这轮打卡！') +
         '\n第1天：' + cnDate(start) +
         '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end));
@@ -1054,8 +1119,7 @@ function renderWeight() {
   // 历史表（按选中月份筛选）
   const tbody = document.getElementById('weightTableBody');
   const empty = document.getElementById('weightEmpty');
-  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  document.getElementById('histMonthLabel').textContent = `${histYear}年${monthNames[histMonth]}`;
+  syncHistPicker();
   if (weights.length === 0) {
     tbody.innerHTML = '';
     empty.style.display = 'block';
@@ -1099,6 +1163,7 @@ function renderWeight() {
   // 饮食记忆 + 掉秤榜
   refreshDietHistory();
   renderDietLossBoard();
+  renderCycleBoard();
 }
 
 let chartYear, chartMonth;
@@ -1125,6 +1190,49 @@ function shiftHistMonth(delta) {
   if (histMonth > 11) { histMonth = 0; histYear++; }
   renderWeight();
 }
+
+// ====== 年/月下拉选择器（体重日历 + 历史记录） ======
+const CN_MONTHS = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+function fillYearSel(sel, cur) {
+  if (!sel) return;
+  if (sel.options.length === 0) {
+    for (let y = 2024; y <= 2035; y++) {
+      const o = document.createElement('option'); o.value = y; o.textContent = y + '年'; sel.appendChild(o);
+    }
+  }
+  sel.value = String(cur);
+}
+function fillMonthSel(sel, cur) {
+  if (!sel) return;
+  if (sel.options.length === 0) {
+    CN_MONTHS.forEach((nm, i) => {
+      const o = document.createElement('option'); o.value = i + 1; o.textContent = nm; sel.appendChild(o);
+    });
+  }
+  sel.value = String(cur + 1);
+}
+function syncChartPicker() {
+  fillYearSel(document.getElementById('chartYearSel'), chartYear);
+  fillMonthSel(document.getElementById('chartMonthSel'), chartMonth);
+}
+function syncHistPicker() {
+  fillYearSel(document.getElementById('histYearSel'), histYear);
+  fillMonthSel(document.getElementById('histMonthSel'), histMonth);
+}
+function onChartPickerChange() {
+  const y = parseInt(document.getElementById('chartYearSel').value, 10);
+  const m = parseInt(document.getElementById('chartMonthSel').value, 10) - 1;
+  if (!isNaN(y)) chartYear = y;
+  if (!isNaN(m)) chartMonth = m;
+  renderWeightChartMonth('weightChart');
+}
+function onHistPickerChange() {
+  const y = parseInt(document.getElementById('histYearSel').value, 10);
+  const m = parseInt(document.getElementById('histMonthSel').value, 10) - 1;
+  if (!isNaN(y)) histYear = y;
+  if (!isNaN(m)) histMonth = m;
+  renderWeight();
+}
 function showWeightPointPopup(date, val, change, food, fullness) {
   const popup = document.getElementById('weightChartPopup');
   // 复位选中：移除旧的 selected 高亮
@@ -1147,8 +1255,7 @@ function showWeightPointPopup(date, val, change, food, fullness) {
 function renderWeightChartMonth(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const monthNames = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  document.getElementById('weightChartMonthLabel').textContent = `${chartYear}年${monthNames[chartMonth]}`;
+  syncChartPicker();
 
   const labels = ['日','一','二','三','四','五','六'];
   const firstDay = new Date(chartYear, chartMonth, 1);
@@ -1264,6 +1371,55 @@ function renderDietLossBoard() {
       <td style="font-size:11px;color:var(--text-light);white-space:normal;">${r.full || '—'}</td>
     </tr>`).join('');
   }
+}
+
+// ====== 打卡周期榜：每轮周期的「减幅差」 ======
+// 起点日体重 − 结束日（第32天）体重 = 减幅差（正数代表掉秤）
+// 起止日缺记录时，用周期区间内最早/最晚一条记录兜底
+function cycleWeightOn(ds) {
+  const hit = weights.find(w => w.date === ds);
+  return hit ? Number(hit.val) : null;
+}
+function buildCycleRows() {
+  const starts = cycleList.slice().sort((a, b) => a < b ? -1 : 1);
+  const rows = [];
+  for (const start of starts) {
+    const end = addDaysStr(start, CYCLE_SPAN);
+    const inRange = weights
+      .filter(w => w.date >= start && w.date <= end)
+      .sort((a, b) => a.date < b.date ? -1 : 1);
+    let startVal = cycleWeightOn(start);
+    let endVal = cycleWeightOn(end);
+    if (endVal === null && inRange.length) endVal = Number(inRange[inRange.length - 1].val);
+    if (startVal === null && inRange.length) startVal = Number(inRange[0].val);
+    if (startVal === null || endVal === null) continue; // 数据不足，不计入
+    rows.push({ start, end, diff: startVal - endVal });
+  }
+  rows.sort((a, b) => b.diff - a.diff); // 减幅差从大到小
+  return rows;
+}
+function renderCycleBoard() {
+  const tbody = document.getElementById('cycleBoardBody');
+  const empty = document.getElementById('cycleBoardEmpty');
+  if (!tbody) return;
+  const rows = buildCycleRows();
+  if (rows.length === 0) {
+    tbody.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  const md = s => s.slice(5); // MM-DD
+  tbody.innerHTML = rows.map((r, idx) => {
+    const abs = fmtKg(Math.abs(r.diff));
+    const arrow = r.diff > 0 ? '↓' : (r.diff < 0 ? '↑' : '');
+    const color = r.diff > 0 ? 'var(--success)' : (r.diff < 0 ? 'var(--danger)' : 'var(--text-light)');
+    return `<tr>
+      <td style="font-weight:700;color:var(--text-light);">${idx + 1}</td>
+      <td style="color:${color};font-weight:700;white-space:nowrap;">${arrow}${abs}kg</td>
+      <td style="white-space:nowrap;">${r.start.slice(0,4)}-${md(r.start)}～${md(r.end)}</td>
+    </tr>`;
+  }).join('');
 }
 
 function initDietAutocomplete() {
