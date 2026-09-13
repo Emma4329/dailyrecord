@@ -190,6 +190,11 @@
   .weight-cal .wday.other-month { opacity: 0.3; }
   .weight-cal .wday.cycle { background: #e8f5e9; border: 1.5px solid #a5d6a7; }
   .weight-cal .wday.cycle .wday-num { color: #1b5e20; font-weight: 700; }
+  /* 打卡周期内：已记录的体重也用深绿色，覆盖 today 的白字 */
+  .weight-cal .wday.cycle .wday-weight,
+  .weight-cal .wday.cycle.today .wday-weight { color: #1b5e20; }
+  .weight-cal .wday.cycle.today { background: #e8f5e9; }
+  .weight-cal .wday.cycle.today .wday-num { color: #1b5e20; }
   .weight-cal .wday.selected { background: var(--danger); border-color: var(--danger); }
   .weight-cal .wday.selected .wday-num,
   .weight-cal .wday.selected .wday-weight { color: #fff; }
@@ -384,7 +389,7 @@
       <div class="form-row">
         <label>饱腹感（可选）</label>
         <div style="display:flex;align-items:center;gap:8px;">
-          <select id="weightFull" style="width:4em;flex:0 0 auto;box-sizing:border-box;min-width:0;padding:10px 6px;">
+          <select id="weightFull" style="width:12em;flex:0 0 auto;box-sizing:border-box;min-width:0;padding:10px 6px;">
             <option value="">不填</option>
             <option value="整天饱">整天饱</option>
             <option value="半饱（7点左右）">半饱（7点左右）</option>
@@ -646,11 +651,22 @@ function cycleDayIndex(ds) {
 }
 function cycleEndStr() { return cycleStart ? addDaysStr(cycleStart, CYCLE_SPAN) : ''; }
 function startCheckinCycle() {
-  const start = todayStr();
+  // 以表单里填的日期为周期起点；若未填，则提示先选日期
+  const dateEl = document.getElementById('weightDate');
+  const picked = dateEl ? (dateEl.value || '').trim() : '';
+  if (!picked) {
+    alert('请先在「日期」里选一个日期，再开始这轮打卡。');
+    if (dateEl) dateEl.focus();
+    return;
+  }
+  const start = picked;
+  const hadPrev = !!cycleStart;
   saveCycleStart(start);
   const end = addDaysStr(start, CYCLE_SPAN);
   renderWeightChartMonth('weightChart');
-  alert('已开始这轮打卡！\n第1天：' + cnDate(start) + '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end));
+  alert((hadPrev ? '已重新开始这轮打卡！' : '已开始这轮打卡！') +
+        '\n第1天：' + cnDate(start) +
+        '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end));
 }
 
 // ====== 工具函数 ======
