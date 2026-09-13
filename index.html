@@ -126,11 +126,12 @@
   .month-picker select.mp-year { width: 88px; min-width: 78px; flex: 0 1 auto; }
   .month-picker select.mp-month { width: 82px; min-width: 66px; flex: 0 1 auto; }
   .month-picker select:focus { outline: none; border-color: var(--primary); }
-  /* 上下月按钮：比原来宽 1 个字（32px + 13px ≈ 45px） */
+  /* 上/下月按钮：容纳「上月」「下月」两个字 */
   .month-picker .mp-nav {
-    width: 45px; height: 34px; padding: 0; font-size: 15px; line-height: 1;
+    min-width: 48px; height: 34px; padding: 0 8px; font-size: 13px; line-height: 1;
     border: 1.5px solid var(--border); border-radius: 8px; background: transparent;
-    color: var(--text); cursor: pointer; flex: 0 0 auto;
+    color: var(--text); cursor: pointer; flex: 0 0 auto; box-sizing: border-box;
+    white-space: nowrap;
   }
   .month-picker .mp-nav:hover { border-color: var(--primary); color: var(--primary); }
 
@@ -475,10 +476,10 @@
       <div class="card-title">
         <span class="icon">📉</span><span class="ct-text">体重日历</span>
         <span class="month-picker">
-          <button class="mp-nav" onclick="shiftWeightChart(-1)" title="上个月">‹</button>
+          <button class="mp-nav" onclick="shiftWeightChart(-1)">上月</button>
           <select id="chartYearSel" class="mp-year" onchange="onChartPickerChange()"></select>
           <select id="chartMonthSel" class="mp-month" onchange="onChartPickerChange()"></select>
-          <button class="mp-nav" onclick="shiftWeightChart(1)" title="下个月">›</button>
+          <button class="mp-nav" onclick="shiftWeightChart(1)">下月</button>
         </span>
       </div>
       <div class="weight-cal" id="weightChart"></div>
@@ -496,10 +497,10 @@
       <div class="card-title">
         <span class="icon">📜</span><span class="ct-text">历史记录</span>
         <span class="month-picker">
-          <button class="mp-nav" onclick="shiftHistMonth(-1)" title="上个月">‹</button>
+          <button class="mp-nav" onclick="shiftHistMonth(-1)">上月</button>
           <select id="histYearSel" class="mp-year" onchange="onHistPickerChange()"></select>
           <select id="histMonthSel" class="mp-month" onchange="onHistPickerChange()"></select>
-          <button class="mp-nav" onclick="shiftHistMonth(1)" title="下个月">›</button>
+          <button class="mp-nav" onclick="shiftHistMonth(1)">下月</button>
         </span>
       </div>
       <div class="hist-scroll">
@@ -525,7 +526,7 @@
 
     <!-- 打卡周期（历史轮次汇总，按减幅差从大到小） -->
     <div class="card">
-      <div class="card-title"><span class="icon">🔄</span>打卡周期排行榜</div>
+      <div class="card-title"><span class="icon">✅</span>打卡周期排行榜</div>
       <div class="cycle-scroll">
         <table id="cycleBoardTable">
           <thead><tr><th>#</th><th>减幅差</th><th>周期范围</th></tr></thead>
