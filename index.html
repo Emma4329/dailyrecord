@@ -717,13 +717,30 @@ function addDaysStr(ds, n) {
   d.setDate(d.getDate() + n);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-// 该日期在周期中的第几天（1..32），不在周期内返回 0
-function cycleDayIndex(ds) {
-  if (!cycleStart || !ds) return 0;
-  const diff = daysBetween(cycleStart, ds);
-  return (diff >= 0 && diff <= CYCLE_SPAN) ? diff + 1 : 0;
+// 该日期命中的打卡周期（支持多轮叠加）。返回 {start, end, day}，不在任何周期内返回 null。
+// 若多轮重叠，取起点最晚（最近一轮）的那次。
+function cycleHit(ds) {
+  if (!ds || cycleList.length === 0) return null;
+  let best = null;
+  for (const start of cycleList) {
+    if (!start) continue;
+    const diff = daysBetween(start, ds);
+    if (diff >= 0 && diff <= CYCLE_SPAN) {
+      const end = addDaysStr(start, CYCLE_SPAN);
+      if (!best || start > best.start) best = { start, end, day: diff + 1 };
+    }
+  }
+  return best;
 }
-function cycleEndStr() { return cycleStart ? addDaysStr(cycleStart, CYCLE_SPAN) : ''; }
+// 该日期在某个周期中的第几天（1..32），不在任何周期内返回 0
+function cycleDayIndex(ds) {
+  const hit = cycleHit(ds);
+  return hit ? hit.day : 0;
+}
+function cycleEndStr(start) {
+  const s = start || cycleStart;
+  return s ? addDaysStr(s, CYCLE_SPAN) : '';
+}
 function startCheckinCycle() {
   // 以表单里填的日期为周期起点；若未填，则提示先选日期
   const dateEl = document.getElementById('weightDate');
@@ -734,14 +751,15 @@ function startCheckinCycle() {
     return;
   }
   const start = picked;
-  const hadPrev = !!cycleStart;
+  const existed = cycleList.indexOf(start) >= 0;
   saveCycleStart(start);
   const end = addDaysStr(start, CYCLE_SPAN);
   renderWeightChartMonth('weightChart');
   renderCycleBoard();
-  alert((hadPrev ? '已重新开始这轮打卡！' : '已开始这轮打卡！') +
+  alert((existed ? '这一轮打卡已经存在，已切换为当前轮次。' : '已开始这轮打卡！') +
         '\n第1天：' + cnDate(start) +
-        '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end));
+        '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end) +
+        '\n（历史轮次会保留，体重日历中会一起高亮）');
 }
 
 // ====== 工具函数 ======
@@ -1247,8 +1265,10 @@ function showWeightPointPopup(date, val, change, food, fullness) {
   const hit = document.querySelector(`#weightChart .wday[data-date="${date}"]`);
   if (hit) hit.classList.add('selected');
   const chHtml = change === null ? '--' : `<span style="color:${change < 0 ? 'var(--success)' : (change > 0 ? 'var(--danger)' : 'var(--text-light)')}">${fmtKg(change, true)}kg</span>`;
-  const cyc = cycleDayIndex(date);
-  const cycHtml = cyc > 0 ? `<span style="color:#1b5e20;font-weight:700;">（第${cyc}天${cyc === CYCLE_SPAN + 1 ? '结束' : ''}）</span>` : '';
+  const cycHit = cycleHit(date);
+  const cycHtml = cycHit
+    ? `<span style="color:#1b5e20;font-weight:700;">（第${cycHit.day}天${cycHit.day === CYCLE_SPAN + 1 ? '结束' : ''}）</span>`
+    : '';
   popup.innerHTML = `
     <span class="pop-close" onclick="document.getElementById('weightChartPopup').style.display='none'">×</span>
     <div class="pop-date">${cnDate(date)} ${cycHtml}</div>
