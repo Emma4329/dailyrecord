@@ -717,6 +717,18 @@ function addDaysStr(ds, n) {
   d.setDate(d.getDate() + n);
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
+// ====== 减幅：只跟「次日」比 ======
+// 次日（date + 1 天）有记录才返回 次日体重 − 当天体重；否则返回 null（显示 --）。
+// 注意：不能拿「下一条记录」来算，中间断档会把好几天的差值摊到一天上，导致虚高。
+function nextDayRecord(ds) {
+  const nd = addDaysStr(ds, 1);
+  return weights.find(w => w.date === nd) || null;
+}
+function dayChange(ds, val) {
+  const next = nextDayRecord(ds);
+  if (!next) return null;
+  return Number(next.val) - Number(val);
+}
 // 该日期命中的打卡周期（支持多轮叠加）。返回 {start, end, day}，不在任何周期内返回 null。
 // 若多轮重叠，取起点最晚（最近一轮）的那次。
 function cycleHit(ds) {
@@ -1160,17 +1172,14 @@ function renderWeight() {
     } else {
       empty.style.display = 'none';
       const reversed = monthWeights.slice().reverse();
-      const allAsc = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
       tbody.innerHTML = reversed.map((w) => {
-      const idx = allAsc.findIndex(x => x.ts === w.ts);
-      const next = (idx >= 0 && idx < allAsc.length - 1) ? allAsc[idx + 1] : null; // 实际下一条记录
+      const diff = dayChange(w.date, w.val); // 次日 − 当天，次日无记录为 null
       let change = '';
-      if (next) {
-        const diff = next.val - w.val; // 下一条 - 本条
+      if (diff === null) {
+        change = '--';
+      } else {
         const color = diff > 0 ? 'var(--danger)' : (diff < 0 ? 'var(--success)' : 'var(--text-light)');
         change = `<span style="color:${color}">${fmtKg(diff, true)}kg</span>`;
-      } else {
-        change = '--';
       }
       return `<tr>
         <td>${change}</td>
@@ -1298,11 +1307,9 @@ function renderWeightChartMonth(id) {
     const d = parseDate(w.date);
     if (d.getFullYear() === chartYear && d.getMonth() === chartMonth) byDate[w.date] = w;
   }
-  // 每条记录的下一天变化
+  // 每条记录的减幅：只跟次日比，次日无记录则显示 --
   function nextChange(w) {
-    const idx = allAsc.findIndex(x => x.ts === w.ts);
-    if (idx >= 0 && idx < allAsc.length - 1) return allAsc[idx + 1].val - w.val;
-    return null;
+    return dayChange(w.date, w.val);
   }
 
   let html = '';
@@ -1363,13 +1370,14 @@ function renderDietLossBoard() {
   const empty = document.getElementById('dietBoardEmpty');
   const sorted = weights.slice().sort((a, b) => a.date < b.date ? -1 : 1);
   const events = [];
-  // 当天吃的食物，其掉秤幅度 = 次日体重 − 当天体重（掉秤为正）。
-  // 例：8/22吃饺子(82.75)、8/23吃牛肉(82.25) → 饺子=82.25-82.75=-0.5(掉0.5)，牛肉=81.9-82.25=-0.35(掉0.35)
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const cur = sorted[i];
+  // 当天吃的食物，其掉秤幅度 = 当天体重 − 次日体重（正=掉秤）。
+  // 只跟「次日」比：次日没记录就不计入，避免中间断档把多天差值算成一天。
+  for (const cur of sorted) {
     const food = (cur.note || '').trim();
     if (!food) continue; // 当天没记录饮食则不计
-    const drop = cur.val - sorted[i + 1].val; // 当天体重 − 次日体重 = 掉秤幅度(正=掉秤)
+    const chg = dayChange(cur.date, cur.val); // 次日 − 当天
+    if (chg === null) continue;               // 次日没记录，无法判定
+    const drop = -chg;                        // 掉秤为正
     if (drop > 0) {
       events.push({ lossKg: drop, food, full: cur.fullness || '' });
     }
