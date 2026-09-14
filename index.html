@@ -112,8 +112,14 @@
   .btn-outline:hover { border-color: var(--primary); color: var(--primary); }
   .btn-danger { background: transparent; border: 1.5px solid #E8C0BC; color: var(--danger); padding: 4px 10px; font-size: 12px; border-radius: 6px; }
   .btn-danger:hover { background: #FDE8E8; }
-  .btn-cycle { background: #e8f5e9; color: #1b5e20; border: 1.5px solid #a5d6a7; }
+  .btn-cycle { background: #e8f5e9; color: #1b5e20; border: 1.5px solid #a5d6a7; white-space: nowrap; }
   .btn-cycle:hover { background: #d5efd8; }
+  /* 删除该轮打卡：红色描边小按钮 */
+  .btn-cycle-del {
+    background: #fdecea; color: #c0392b; border: 1.5px solid #e8b4ad;
+    flex: 0 0 auto; width: 46px; padding: 0; font-size: 15px; line-height: 1;
+  }
+  .btn-cycle-del:hover { background: #fbdcd8; }
 
   /* 月份选择器（体重日历 / 历史记录 标题右侧） */
   .month-picker select {
@@ -436,13 +442,14 @@
       <div class="form-row">
         <label>饱腹感（可选）</label>
         <div style="display:flex;align-items:center;gap:8px;">
-          <select id="weightFull" style="width:12em;flex:0 0 auto;box-sizing:border-box;min-width:0;padding:10px 6px;">
+          <select id="weightFull" style="width:12em;flex:0 1 auto;box-sizing:border-box;min-width:0;padding:10px 6px;">
             <option value="">不填</option>
             <option value="整天饱">整天饱</option>
             <option value="半饱（7点左右）">半饱（7点左右）</option>
             <option value="饿">饿</option>
           </select>
           <button class="btn btn-cycle" onclick="startCheckinCycle()" style="flex:1;">开始这轮打卡</button>
+          <button class="btn btn-cycle-del" onclick="deleteCheckinCycle()" title="删除该日期对应的这轮打卡">❌</button>
         </div>
       </div>
       <button class="btn btn-primary" onclick="saveWeight()" style="width:100%;">保存记录</button>
@@ -772,6 +779,40 @@ function startCheckinCycle() {
         '\n第1天：' + cnDate(start) +
         '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end) +
         '\n（历史轮次会保留，体重日历中会一起高亮）');
+}
+// 删除某轮打卡：以表单日期为起点，找到完全匹配的轮次并移除
+function deleteCheckinCycle() {
+  const dateEl = document.getElementById('weightDate');
+  const picked = dateEl ? (dateEl.value || '').trim() : '';
+  if (!picked) {
+    alert('请先在「日期」里选一个日期，再点 ❌ 删除对应那轮打卡。');
+    if (dateEl) dateEl.focus();
+    return;
+  }
+  const idx = cycleList.indexOf(picked);
+  if (idx < 0) {
+    alert('没有找到以 ' + cnDate(picked) + ' 为起点的打卡周期。\n请确认「日期」选的是那一轮的第 1 天。');
+    return;
+  }
+  const end = addDaysStr(picked, CYCLE_SPAN);
+  if (!confirm('确定删除这轮打卡吗？\n第1天：' + cnDate(picked) + '\n第' + (CYCLE_SPAN + 1) + '天结束：' + cnDate(end))) {
+    return;
+  }
+  cycleList.splice(idx, 1);
+  // 若删的正是「当前轮次」，把当前轮次切到剩下最近的一轮（没有则为空）
+  let cur = cycleStart;
+  if (cycleStart === picked) {
+    const rest = cycleList.slice().sort((a, b) => a < b ? -1 : 1);
+    cur = rest.length ? rest[rest.length - 1] : '';
+  }
+  cycleStart = cur;
+  try {
+    localStorage.setItem(KEY_CYCLES, JSON.stringify(cycleList));
+    localStorage.setItem(KEY_CYCLE, cur);
+  } catch (e) {}
+  renderWeightChartMonth('weightChart');
+  renderCycleBoard();
+  alert('已删除这轮打卡（' + cnDate(picked) + ' 起）。');
 }
 
 // ====== 工具函数 ======
