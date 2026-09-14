@@ -1317,7 +1317,7 @@ function showWeightPointPopup(date, val, change, food, fullness) {
   const chHtml = change === null ? '--' : `<span style="color:${change < 0 ? 'var(--success)' : (change > 0 ? 'var(--danger)' : 'var(--text-light)')}">${fmtKg(change, true)}kg</span>`;
   const cycHit = cycleHit(date);
   const cycHtml = cycHit
-    ? `<span style="color:#1b5e20;font-weight:700;">（第${cycHit.day}天${cycHit.day === CYCLE_SPAN + 1 ? '结束' : ''}）</span>`
+    ? `<span style="color:#1b5e20;font-weight:700;">（第${cycHit.day}天${cycHit.day === CYCLE_SPAN + 1 ? '·这轮结束' : ''}）</span>`
     : '';
   popup.innerHTML = `
     <span class="pop-close" onclick="document.getElementById('weightChartPopup').style.display='none'">×</span>
@@ -1488,11 +1488,12 @@ function renderCycleBoard() {
   const md = s => s.slice(5); // MM-DD
   tbody.innerHTML = rows.map((r, idx) => {
     const abs = fmtKg(Math.abs(r.diff));
+    const jin = fmtKg(Math.abs(r.diff) * 2); // 1kg = 2斤
     const arrow = r.diff > 0 ? '↓' : (r.diff < 0 ? '↑' : '');
     const color = r.diff > 0 ? 'var(--success)' : (r.diff < 0 ? 'var(--danger)' : 'var(--text-light)');
     return `<tr>
       <td style="font-weight:700;color:var(--text-light);">${idx + 1}</td>
-      <td style="color:${color};font-weight:700;white-space:nowrap;">${arrow}${abs}kg</td>
+      <td style="color:${color};font-weight:700;white-space:nowrap;">${arrow}${abs}kg（${jin}斤）</td>
       <td style="white-space:nowrap;">${r.start.slice(0,4)}-${md(r.start)}～${md(r.end)}</td>
     </tr>`;
   }).join('');
