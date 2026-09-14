@@ -145,9 +145,13 @@
   .cycle-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
   #cycleBoardTable { table-layout: fixed; width: 100%; min-width: 0; }
   #cycleBoardTable th, #cycleBoardTable td { text-align: center; }
-  #cycleBoardTable th:nth-child(1), #cycleBoardBody td:nth-child(1) { width: 15%; }
-  #cycleBoardTable th:nth-child(2), #cycleBoardBody td:nth-child(2) { width: 30%; }
-  #cycleBoardTable th:nth-child(3), #cycleBoardBody td:nth-child(3) { width: 55%; }
+  #cycleBoardTable th:nth-child(1), #cycleBoardBody td:nth-child(1) { width: 8%; }
+  #cycleBoardTable th:nth-child(2), #cycleBoardBody td:nth-child(2) { width: 29%; }
+  #cycleBoardTable th:nth-child(3), #cycleBoardBody td:nth-child(3) { width: 29%; }
+  #cycleBoardTable th:nth-child(4), #cycleBoardBody td:nth-child(4) { width: 34%; }
+  /* 体重 / 周期范围两列允许自动换行 */
+  #cycleBoardBody td:nth-child(3),
+  #cycleBoardBody td:nth-child(4) { white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
 
   /* ====== 表格 ====== */
   .table-scroll { overflow-x: auto; }
@@ -536,7 +540,7 @@
       <div class="card-title"><span class="icon">✅</span>打卡周期排行榜</div>
       <div class="cycle-scroll">
         <table id="cycleBoardTable">
-          <thead><tr><th>#</th><th>减幅差</th><th>周期范围</th></tr></thead>
+          <thead><tr><th>#</th><th>减幅差</th><th>体重</th><th>周期范围</th></tr></thead>
           <tbody id="cycleBoardBody"></tbody>
         </table>
       </div>
@@ -1469,7 +1473,7 @@ function buildCycleRows() {
     if (endVal === null && inRange.length) endVal = Number(inRange[inRange.length - 1].val);
     if (startVal === null && inRange.length) startVal = Number(inRange[0].val);
     if (startVal === null || endVal === null) continue; // 数据不足，不计入
-    rows.push({ start, end, diff: startVal - endVal });
+    rows.push({ start, end, diff: startVal - endVal, startVal, endVal });
   }
   rows.sort((a, b) => b.diff - a.diff); // 减幅差从大到小
   return rows;
@@ -1491,10 +1495,12 @@ function renderCycleBoard() {
     const jin = fmtKg(Math.abs(r.diff) * 2); // 1kg = 2斤
     const arrow = r.diff > 0 ? '↓' : (r.diff < 0 ? '↑' : '');
     const color = r.diff > 0 ? 'var(--success)' : (r.diff < 0 ? 'var(--danger)' : 'var(--text-light)');
+    const wt = `${fmtKg(r.startVal)}kg～${fmtKg(r.endVal)}kg`;
     return `<tr>
       <td style="font-weight:700;color:var(--text-light);">${idx + 1}</td>
-      <td style="color:${color};font-weight:700;white-space:nowrap;">${arrow}${abs}kg（${jin}斤）</td>
-      <td style="white-space:nowrap;">${r.start.slice(0,4)}-${md(r.start)}～${md(r.end)}</td>
+      <td style="color:${color};font-weight:700;">${arrow}${abs}kg（${jin}斤）</td>
+      <td>${wt}</td>
+      <td>${r.start.slice(0,4)}-${md(r.start)}～${md(r.end)}</td>
     </tr>`;
   }).join('');
 }
